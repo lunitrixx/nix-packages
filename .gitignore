@@ -1,3 +1,50 @@
+# Agent personal / machine-specific config (never commit)
+.claude/settings.local.json
+.pi/settings.local.json
+
+# openwolf: ignore local/session state, but SHARE the project memory
+.wolf/*
+!.wolf/cerebrum.md
+!.wolf/anatomy.md
+!.wolf/buglog.json
+!.wolf/OPENWOLF.md
+!.wolf/identity.md
+
+# Nix build output
 result
 result-*
+
+# Nix direnv / dev-shell state
 .direnv/
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Secrets & environment
+.env
+.env.*
+!.env.example
+
+# IDE / editor directories
+/.idea
+/.zed
+/.fleet
+/.nova
+
+# VS Code: ignore everything except shared config
+/.vscode/*
+!/.vscode/mcp.json
+!/.vscode/settings.json
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
