@@ -1,0 +1,25 @@
+# Normalize text files to LF in the repository; check out native per OS.
+* text=auto
+
+# Always check out these with LF, even on Windows.
+*.sh   text eol=lf
+*.bash text eol=lf
+
+# Always check out Windows scripts with CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Lockfiles: normalize to LF, skip noisy diffs.
+*.lock text -diff
+
+# Common binary types (guards edge cases like UTF-16 misdetection).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
