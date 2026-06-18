@@ -27,15 +27,20 @@ and the reverse proxy which isn't in nixpkgs).
 flake.nix                            # overlays.default, legacyPackages, packages, checks, formatter
 pkgs/
 ├── by-name-overlay.nix              # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
-└── by-name/ne/
-    ├── netbird/package.nix          # one source tree → any component via componentName
-    ├── netbird-management/package.nix  # { netbird }: netbird.override { componentName = …; }
-    ├── netbird-signal/package.nix      #   one tiny file per component, exactly like nixpkgs
-    ├── netbird-relay/package.nix
-    ├── netbird-proxy/package.nix     #   reverse proxy (not in nixpkgs)
-    ├── netbird-ui/package.nix
-    ├── netbird-upload/package.nix
-    └── netbird-dashboard/package.nix # buildNpmPackage from netbirdio/dashboard
+├── by-name/ne/
+│   ├── netbird/package.nix          # one source tree → any component via componentName
+│   ├── netbird-management/package.nix  # { netbird }: netbird.override { componentName = …; }
+│   ├── netbird-signal/package.nix      #   one tiny file per component, exactly like nixpkgs
+│   ├── netbird-relay/package.nix
+│   ├── netbird-proxy/package.nix     #   reverse proxy (not in nixpkgs)
+│   ├── netbird-ui/package.nix
+│   ├── netbird-upload/package.nix
+│   └── netbird-dashboard/package.nix # buildNpmPackage from netbirdio/dashboard
+└── by-name/za/zabbix74/
+    ├── package.nix                  # assembly: recurseIntoAttrs (zabbixFor "v74") → an attrset
+    ├── versions.nix                 # the single version + hash pin (v74)
+    ├── server.nix agent.nix agent2.nix web.nix proxy.nix  # vendored verbatim from nixpkgs
+    └── …                            # `pkgs.zabbix74.{server-pgsql,web,agent2,…}`
 ```
 
 ## How it works
@@ -55,7 +60,10 @@ The flake exposes:
 - `legacyPackages.<system>` — nixpkgs with our overlay applied (ours + nixpkgs
   fall-through).
 - `packages.<system>` — just our packages; also wired into `checks` so
-  `nix flake check` builds every one of them.
+  `nix flake check` builds every one of them. A package that is an *attrset* of
+  derivations (see zabbix74 below) is flattened here into `<name>-<sub>` entries
+  (e.g. `zabbix74-server-pgsql`) so `packages`/`checks` stay flat derivations;
+  the overlay still exposes the original attrset shape.
 
 ## Conventions
 
@@ -82,6 +90,16 @@ Nix package set:
   per component doing `netbird.override { componentName = …; }` — exactly like
   nixpkgs. The overlay's `final.callPackage` makes `{ netbird }` resolve to our
   package, so all components stay version-matched.
+- **Attrset-valued packages** (like zabbix74) are the exception to the per-component
+  rule above. zabbix74's `package.nix` reproduces nixpkgs' `zabbixFor "v74"` block
+  and returns `recurseIntoAttrs (…)` — a single by-name entry whose value is an
+  *attrset* of derivations (`.server-pgsql`, `.web`, `.agent2`, …). Use this shape
+  (not separate by-name files per variant) **only when a consumer needs the attrset
+  access** — `nix-images` wires `pkgs.zabbix74.server-pgsql` etc. directly, so the
+  attrset is part of the contract. The flake's `packages`/`checks` flatten it into
+  `zabbix74-<sub>` build targets; the consumer-facing `pkgs.zabbix74.<sub>` shape is
+  untouched. Keep the vendored component files (`server.nix`, `web.nix`, …) verbatim
+  and confine deltas to `versions.nix` + the `package.nix` assembly.
 - **The exposed overlay names its arguments `final`/`prev`.** nixpkgs uses
   `self`/`super` internally, but `nix flake check` requires `final`/`prev` for a
   flake `overlays.default`. Same mechanism, mandated names.
@@ -96,6 +114,11 @@ Nix package set:
 
 A bump to the netbird parent updates the client **and** every server component
 at once — guaranteed version-matched.
+
+For zabbix74, bump the single `version` + `hash` in `versions.nix` (the source is
+a `fetchurl` tarball, so get the hash with
+`nix store prefetch-file <url>`, not `nurl`). That re-pins every
+component at once. Leave the vendored component files untouched.
 
 ## Commands
 

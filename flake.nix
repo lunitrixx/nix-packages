@@ -37,12 +37,25 @@
       legacyPackages = forAllSystems pkgsFor;
 
       # Just our own packages - for `nix flake show` and as build/check targets.
+      # A package may be a single derivation (e.g. netbird) or an attrset of
+      # derivations (e.g. zabbix74, which recurseIntoAttrs into .server / .web /
+      # ...). The flake's packages/checks must be flat derivations, so flatten
+      # attrset packages into "<name>-<sub>" entries. The overlay still exposes
+      # the original shape (pkgs.zabbix74.server stays an attrset access).
       packages = forAllSystems (
         system:
         let
           pkgs = pkgsFor system;
+          flatten =
+            name: v:
+            if lib.isDerivation v then
+              { ${name} = v; }
+            else
+              lib.mapAttrs' (sub: drv: lib.nameValuePair "${name}-${sub}" drv) (
+                lib.filterAttrs (_: lib.isDerivation) v
+              );
         in
-        lib.genAttrs packageNames (name: pkgs.${name})
+        lib.foldl' (acc: name: acc // flatten name pkgs.${name}) { } packageNames
       );
 
       # `nix flake check` builds every package we define.
