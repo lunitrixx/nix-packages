@@ -24,7 +24,17 @@
       ) (builtins.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir byNameDir)));
 
       # nixpkgs with our overlay applied: our packages + everything from nixpkgs.
-      pkgsFor = system: nixpkgs.legacyPackages.${system}.extend overlay;
+      # allowUnfree is set so this repo's own build targets (legacyPackages/
+      # packages/checks) can build unfree packages like claude-code/ray/
+      # tinkerwell/fontbase. The exposed overlays.default is unaffected -
+      # consumers set their own allowUnfree.
+      pkgsFor =
+        system:
+        (import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        }).extend
+          overlay;
     in
     {
       # Apply in a consumer: nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
@@ -46,13 +56,18 @@
         system:
         let
           pkgs = pkgsFor system;
+          # Drop anything not available on this system's platform, so that
+          # x86_64-linux-only packages (claude-code/ray/tinkerwell/fontbase)
+          # don't break aarch64 checks.
           flatten =
             name: v:
             if lib.isDerivation v then
-              { ${name} = v; }
+              (if lib.meta.availableOn pkgs.stdenv.hostPlatform v then { ${name} = v; } else { })
             else
               lib.mapAttrs' (sub: drv: lib.nameValuePair "${name}-${sub}" drv) (
-                lib.filterAttrs (_: lib.isDerivation) v
+                lib.filterAttrs (
+                  _: drv: lib.isDerivation drv && lib.meta.availableOn pkgs.stdenv.hostPlatform drv
+                ) v
               );
         in
         lib.foldl' (acc: name: acc // flatten name pkgs.${name}) { } packageNames
