@@ -36,12 +36,22 @@ pkgs/
 │   ├── netbird-ui/package.nix
 │   ├── netbird-upload/package.nix
 │   └── netbird-dashboard/package.nix # buildNpmPackage from netbirdio/dashboard
-└── by-name/za/zabbix74/
-    ├── package.nix                  # assembly: recurseIntoAttrs (zabbixFor "v74") → an attrset
-    ├── versions.nix                 # the single version + hash pin (v74)
-    ├── server.nix agent.nix agent2.nix web.nix proxy.nix  # vendored verbatim from nixpkgs
-    └── …                            # `pkgs.zabbix74.{server-pgsql,web,agent2,…}`
+├── by-name/za/zabbix74/
+│   ├── package.nix                  # assembly: recurseIntoAttrs (zabbixFor "v74") → an attrset
+│   ├── versions.nix                 # the single version + hash pin (v74)
+│   ├── server.nix agent.nix agent2.nix web.nix proxy.nix  # vendored verbatim from nixpkgs
+│   └── …                            # `pkgs.zabbix74.{server-pgsql,web,agent2,…}`
+├── by-name/cl/claude-code/package.nix   # prebuilt binary in buildFHSEnv (unfree, x86_64-linux)
+├── by-name/pi/pi-coding-agent/package.nix  # buildNpmPackage from earendil-works/pi
+├── by-name/ra/ray/package.nix       # AppImage, Spatie debug app (unfree, x86_64-linux)
+├── by-name/ti/tinkerwell/package.nix    # AppImage, PHP tinker tool (unfree, x86_64-linux)
+└── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
 ```
+
+Unfree and platform-restricted packages: the flake's own `packages`/`checks`
+build with `config.allowUnfree = true` (consumers set their own), and `packages`
+drops anything not `lib.meta.availableOn` the current system, so the
+`x86_64-linux`-only entries above don't break `aarch64-linux` checks.
 
 ## How it works
 
