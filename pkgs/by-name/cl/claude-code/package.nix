@@ -5,11 +5,11 @@
   buildFHSEnv,
 }:
 let
-  version = "2.1.178";
+  version = "2.1.185";
   gcs = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases";
   src = fetchurl {
     url = "${gcs}/${version}/linux-x64/claude";
-    hash = "sha256-F+0amDpJQExGc94oZBmo/WYXySRAouD3ibzEE6OxTeE=";
+    hash = "sha256-4SRjOGmfBO4OYn3uP21O16C6tI4FFL3mnG2tQ7wwOVI=";
     name = "claude-${version}";
   };
   unwrapped = stdenvNoCC.mkDerivation {
