@@ -8,16 +8,16 @@
 }:
 buildNpmPackage {
   pname = "pi-coding-agent";
-  version = "0.79.9";
+  version = "0.79.10";
 
   src = fetchFromGitHub {
     owner = "earendil-works";
     repo = "pi";
-    tag = "v0.79.9";
-    hash = "sha256-+h1D51JM4F2iHCzTA57A5/uAzHQBKSlz/7x3/PtQhec=";
+    tag = "v0.79.10";
+    hash = "sha256-UMRkOzJpA1XcEHzRwHxgBg6idEmpVJzBKlrXZaVf4MQ=";
   };
 
-  npmDepsHash = "sha256-uej0uXVbihmxpuvviCK/5JFSEqDamIW5ETOL/ZKW45g=";
+  npmDepsHash = "sha256-QwnECZVri6w/3KdxITnnRkhtq1GIpzP08C/PF4fMmd4=";
   npmWorkspace = "packages/coding-agent";
   npmRebuildFlags = [ "--ignore-scripts" ];
 
