@@ -165,6 +165,7 @@ _Mandatory - additions allowed, removal or weakening is not._
 - Never commit directly to `main`. Every change goes through a branch and a Pull Request.
 - Branch naming: `feat/<topic>` for features, `fix/<topic>` for bugfixes.
 - Always use squash merge, with a single clean squash commit message (not a concatenation of every commit).
+- Every squash commit message must include the PR number as `(#XX)` at the end of the subject line. Do not pass `--subject` to `gh pr merge` - let it auto-generate from the PR title so the `(#XX)` suffix is appended automatically.
 - Git/GitHub artifacts (commit messages, PR titles/bodies, issues, branch names) are always written in English.
 - Do not add any trailer block to commits or PRs.
 
@@ -176,6 +177,10 @@ _Mandatory - additions allowed, removal or weakening is not._
   fine; only open a PR when explicitly asked.
 - **NEVER merge a PR without explicit confirmation.** A green `nix flake check`
   is not the same as being tested by a consumer on a real target.
+- **When merging via `gh pr merge --squash`, do NOT pass `--subject`.**
+  Let GitHub autogenerate the message from the PR title so the `(#XX)`
+  reference is appended. If you need a custom subject, include `(#XX)`
+  manually.
 
 ## Writing style
 
