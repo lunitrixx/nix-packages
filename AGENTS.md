@@ -192,6 +192,6 @@ Claude Code accesses them through the `.claude/skills -> ../.pi/skills` symlink.
 
 | Skill | Description |
 |---|---|
-| `version-check` | Check all packages for newer upstream versions. Auto-discovers every package under `pkgs/by-name/`. |
+| `version-update` | Check all packages for newer upstream versions and update them with pinned hashes. Auto-discovers every package under `pkgs/by-name/`. |
 
 
