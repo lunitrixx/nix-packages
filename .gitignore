@@ -2,14 +2,6 @@
 .claude/settings.local.json
 .pi/settings.local.json
 
-# openwolf: ignore local/session state, but SHARE the project memory
-.wolf/*
-!.wolf/cerebrum.md
-!.wolf/anatomy.md
-!.wolf/buglog.json
-!.wolf/OPENWOLF.md
-!.wolf/identity.md
-
 # Nix build output
 result
 result-*
@@ -48,3 +40,4 @@ npm-debug.log*
 # OS / editor cruft
 .DS_Store
 Thumbs.db
+.claude/worktrees/
