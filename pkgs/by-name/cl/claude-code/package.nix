@@ -5,18 +5,16 @@
   buildFHSEnv,
 }:
 let
-  version = "2.1.191";
-  gcs = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases";
+  version = "2.1.197";
   src = fetchurl {
-    url = "${gcs}/${version}/linux-x64/claude";
-    hash = "sha256-EDjbqIvfG4CUHcPjg+k7CIMlsASXMprFDaRgyHhtW+4=";
-    name = "claude-${version}";
+    url = "https://github.com/anthropics/claude-code/releases/download/v${version}/claude-linux-x64.tar.gz";
+    hash = "sha256-SZZzOxkUOkhOcNIdfs+FdiBzBgBtH1tfqXbuX2DGDf8=";
   };
   unwrapped = stdenvNoCC.mkDerivation {
     pname = "claude-code-unwrapped";
-    inherit version;
-    dontUnpack = true;
-    installPhase = "install -Dm755 ${src} $out/bin/claude";
+    inherit version src;
+    sourceRoot = ".";
+    installPhase = "install -Dm755 claude $out/bin/claude";
   };
 in
 buildFHSEnv {
