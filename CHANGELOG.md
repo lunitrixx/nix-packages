@@ -4,6 +4,10 @@
 
 ### Changed
 
+- **stalwart:** Enabled `enterprise` compile-time feature in `buildFeatures`.
+  The feature compiles enterprise code into the binary but requires a license
+  key to activate - without one, Stalwart runs as the standard open-source
+  edition.
 - **netbird-dashboard:** Updated to v2.90.2.
 - **pi-coding-agent:** Updated to v0.80.3.
 - **omp:** Updated to v16.2.12.
