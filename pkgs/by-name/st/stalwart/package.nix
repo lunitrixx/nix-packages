@@ -3,6 +3,7 @@
 # Vendored from nixpkgs (pkgs/by-name/st/stalwart/package.nix). Deltas from
 # upstream:
 #   * pinned version 0.16.11 (ahead of the nixpkgs channel at 0.15.5);
+#   * added "enterprise" to buildFeatures (match the official Docker image);
 #   * removed passthru.webadmin, passthru.spam-filter, passthru.tests,
 #     and passthru.updateScript (not relevant for our package set).
 {
@@ -64,6 +65,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "redis"
     "azure"
     "nats"
+    "enterprise"
   ];
 
   env = {
