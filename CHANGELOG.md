@@ -4,6 +4,10 @@
 
 ### Changed
 
+- **netbird:** Updated to v0.74.2.
+- **omp:** Updated to v16.3.7.
+- **claude-code:** Updated to v2.1.201.
+- **tinkerwell:** Updated to v5.17.0.
 - **stalwart:** Enabled `enterprise` compile-time feature in `buildFeatures`.
   The feature compiles enterprise code into the binary but requires a license
   key to activate - without one, Stalwart runs as the standard open-source
