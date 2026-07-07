@@ -20,6 +20,10 @@
 
 ### Added
 
+- **vital:** Vendored from nixpkgs and bumped to v1.6.4 (ahead of nixpkgs at
+  v1.5.5). This fixes a black screen on Wayland + Mesa 26. Added as
+  `pkgs/by-name/vi/vital/package.nix` and auto-discovered by the by-name
+  overlay.
 - **stalwart:** Stalwart Mail Server v0.16.11 (ahead of nixpkgs at v0.15.5).
   Added as `pkgs/by-name/st/stalwart/package.nix` and auto-discovered by the
   by-name overlay.
