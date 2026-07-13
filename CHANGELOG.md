@@ -5,17 +5,12 @@
 ### Changed
 
 - **netbird:** Updated to v0.74.4.
-- **stalwart:** Updated to v0.16.12.
 - **zabbix74:** Updated to v7.4.12.
 - **omp:** Updated to v16.4.6.
 - **claude-code:** Updated to v2.1.207.
 - **pi-coding-agent:** Updated to v0.80.6.
 - **netbird-dashboard:** Updated to v2.90.2.
 - **tinkerwell:** Updated to v5.17.0.
-- **stalwart:** Enabled `enterprise` compile-time feature in `buildFeatures`.
-  The feature compiles enterprise code into the binary but requires a license
-  key to activate - without one, Stalwart runs as the standard open-source
-  edition.
 
 ### Added
 
@@ -23,6 +18,4 @@
   v1.5.5). This fixes a black screen on Wayland + Mesa 26. Added as
   `pkgs/by-name/vi/vital/package.nix` and auto-discovered by the by-name
   overlay.
-- **stalwart:** Stalwart Mail Server v0.16.11 (ahead of nixpkgs at v0.15.5).
-  Added as `pkgs/by-name/st/stalwart/package.nix` and auto-discovered by the
-  by-name overlay.
+
