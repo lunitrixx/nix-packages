@@ -5,10 +5,10 @@
   buildFHSEnv,
 }:
 let
-  version = "2.1.214";
+  version = "2.1.220";
   src = fetchurl {
     url = "https://github.com/anthropics/claude-code/releases/download/v${version}/claude-linux-x64.tar.gz";
-    hash = "sha256-sH+xfdUibTy0QT8+yO9b6KJDenAgnq6aEyG36s7OQaE=";
+    hash = "sha256-5p5/cteEwkO8w3eleK2f+OZa4U2mcvu/nyunv0fsp+w=";
   };
   unwrapped = stdenvNoCC.mkDerivation {
     pname = "claude-code-unwrapped";

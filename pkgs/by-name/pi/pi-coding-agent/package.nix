@@ -6,28 +6,31 @@
   nodejs_latest,
   ripgrep,
 }:
-buildNpmPackage {
-  pname = "pi-coding-agent";
-  version = "0.80.10";
-
+let
+  version = "0.82.1";
   src = fetchFromGitHub {
     owner = "earendil-works";
     repo = "pi";
-    tag = "v0.80.10";
-    hash = "sha256-Vs/ndHYzFyfN4CjPV2zMYblLXe9IuM13UrPJI1VsZEQ=";
+    tag = "v${version}";
+    hash = "sha256-LESpgd/KUoNqdBfnd1oyMN8coKm0Odbo9GYkUDry8Zk=";
   };
+in
+buildNpmPackage {
+  pname = "pi-coding-agent";
+  inherit version src;
 
-  npmDepsHash = "sha256-XGvDNH+eilsgc0Z7ITqbitB/9RVc+WuDfCcr1pibNqk=";
+  npmDepsHash = "sha256-5pHRwxpKg95/phOcYHeWdvPJNtSOhiw7PRoVxsuh0RM=";
   npmWorkspace = "packages/coding-agent";
   npmRebuildFlags = [ "--ignore-scripts" ];
 
   buildPhase = ''
-    runHook preBuild
+    mkdir -p packages/ai/src/providers/data
+    shopt -s dotglob
+    cp -r ${./models-data}/* packages/ai/src/providers/data/
     npx tsgo -p packages/ai/tsconfig.build.json
     npx tsgo -p packages/tui/tsconfig.build.json
     npx tsgo -p packages/agent/tsconfig.build.json
     npm run build --workspace=packages/coding-agent
-    runHook postBuild
   '';
 
   postInstall = ''
@@ -43,7 +46,6 @@ buildNpmPackage {
     find "$nm/.bin" -xtype l -delete
   '';
 
-  # Resolve the user's home at runtime; a plain derivation has no HM `config`.
   postFixup = ''
     wrapProgram $out/bin/pi \
       --run 'export NPM_CONFIG_PREFIX="$HOME/.pi/npm"' \
