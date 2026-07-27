@@ -62,11 +62,19 @@
           flatten =
             name: v:
             if lib.isDerivation v then
-              (if lib.meta.availableOn pkgs.stdenv.hostPlatform v then { ${name} = v; } else { })
+              (
+                if lib.meta.availableOn pkgs.stdenv.hostPlatform v && !(v.meta.broken or false) then
+                  { ${name} = v; }
+                else
+                  { }
+              )
             else
               lib.mapAttrs' (sub: drv: lib.nameValuePair "${name}-${sub}" drv) (
                 lib.filterAttrs (
-                  _: drv: lib.isDerivation drv && lib.meta.availableOn pkgs.stdenv.hostPlatform drv
+                  _: drv:
+                  lib.isDerivation drv
+                  && lib.meta.availableOn pkgs.stdenv.hostPlatform drv
+                  && !(drv.meta.broken or false)
                 ) v
               );
         in
