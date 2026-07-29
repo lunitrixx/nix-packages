@@ -4,12 +4,12 @@
 
 ### Changed
 
-- **netbird:** Updated to v0.74.7.
+- **netbird:** Updated to v0.75.1.
 - **zabbix74:** Updated to v7.4.12.
-- **omp:** Updated to v17.0.4.
+- **omp:** Updated to v17.1.8.
 - **claude-code:** Updated to v2.1.214.
 - **pi-coding-agent:** Updated to v0.80.10.
-- **netbird-dashboard:** Updated to v2.90.4.
+- **netbird-dashboard:** Updated to v2.90.8.
 - **tinkerwell:** Updated to v5.17.1.
 
 ### Added
