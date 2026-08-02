@@ -13,7 +13,7 @@
 
 buildGoModule (finalAttrs: {
   pname = "wails3";
-  version = "3.0.0-alpha2.117";
+  version = "3.0.0-beta.1";
 
   __structuredAttrs = true;
 
@@ -21,13 +21,14 @@ buildGoModule (finalAttrs: {
     owner = "wailsapp";
     repo = "wails";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-lGMY+xlhclf+1YWJHiZI8/VVOz8e5bCOAw4XUDzecNI=";
+    hash = "sha256-4DmCMnl/z2mHkPrpk5dNtw7PG71cW2imXOZYAQRMjH0=";
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-HXUC9f8B+NA74I6wPf+VdqVpcyE+QoRaVWbYLQqOi1o=";
+  vendorHash = "sha256-88RqtT9LyvMdIyhXA3wuIIdurwHcP3DaMl1HD338IV8=";
+  modRoot = "v3";
 
-  subPackages = [ "v3/cmd/wails3" ];
+  subPackages = [ "cmd/wails3" ];
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ webkitgtk_6_0 ];
@@ -41,7 +42,7 @@ buildGoModule (finalAttrs: {
   depsTargetTargetPropagated = [ webkitgtk_6_0 ];
 
   meta = {
-    description = "Build desktop applications using Go & Web Technologies, v3 alpha";
+    description = "Build desktop applications using Go & Web Technologies, v3 beta";
     homepage = "https://wails.io";
     license = lib.licenses.mit;
     mainProgram = "wails3";
