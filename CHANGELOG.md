@@ -4,15 +4,14 @@
 
 ### Changed
 
-- **netbird:** Updated to v0.75.1. The UI component now builds with a
-  two-phase process (pnpm frontend + CGo) and Wails3/GTK4 support,
-  re-enabling the netbird-ui package that was broken since 0.75.0.
-- **zabbix74:** Updated to v7.4.12.
-- **omp:** Updated to v17.1.8.
-- **claude-code:** Updated to v2.1.214.
-- **pi-coding-agent:** Updated to v0.80.10.
-- **netbird-dashboard:** Updated to v2.90.8.
-- **tinkerwell:** Updated to v5.17.1.
+- **netbird:** Updated to v0.76.0.
+- **zabbix74:** Updated to v7.4.13.
+- **omp:** Updated to v17.2.4.
+- **claude-code:** Updated to v2.1.220.
+- **pi-coding-agent:** Updated to v0.83.0.
+- **netbird-dashboard:** Updated to v2.90.9.
+- **tinkerwell:** Updated to v5.17.2.
+- **wails3:** Updated to v3.0.0-beta.1 (from alpha2.117). Added `modRoot = "v3"` for new beta module layout.
 
 ### Added
 
