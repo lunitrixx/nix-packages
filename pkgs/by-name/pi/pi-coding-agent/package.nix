@@ -7,19 +7,19 @@
   ripgrep,
 }:
 let
-  version = "0.83.0";
+  version = "0.84.1";
   src = fetchFromGitHub {
     owner = "earendil-works";
     repo = "pi";
     tag = "v${version}";
-    hash = "sha256-+XRJua2TSXkZMnWtxtLMskSzEHrGEFFyvYcPATi7An4=";
+    hash = "sha256-lg+I4S/aAjazjhGZU567ow+rksoNiqOqjHl//TjAMes=";
   };
 in
 buildNpmPackage {
   pname = "pi-coding-agent";
   inherit version src;
 
-  npmDepsHash = "sha256-AbSfP1Ion8bN309NUBQb1QSn2cIIUjNONmZgls9vnYE=";
+  npmDepsHash = "sha256-tufyZQRPAUeDtiq0UQodbKA/Y9xUAvNT8K+NWFjkeME=";
   npmWorkspace = "packages/coding-agent";
   npmRebuildFlags = [ "--ignore-scripts" ];
 
@@ -27,9 +27,12 @@ buildNpmPackage {
     mkdir -p packages/ai/src/providers/data
     shopt -s dotglob
     cp -r ${./models-data}/* packages/ai/src/providers/data/
+    npx tsgo -p packages/telemetry/tsconfig.build.json
     npx tsgo -p packages/ai/tsconfig.build.json
     npx tsgo -p packages/tui/tsconfig.build.json
     npx tsgo -p packages/agent/tsconfig.build.json
+    npx tsgo -p packages/protocol/tsconfig.build.json
+    npx tsgo -p packages/client/tsconfig.build.json
     npm run build --workspace=packages/coding-agent
   '';
 
