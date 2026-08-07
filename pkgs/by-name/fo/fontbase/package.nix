@@ -4,10 +4,10 @@
   appimageTools,
 }:
 let
-  version = "2026.5.17";
+  version = "2026.5.23";
   src = fetchurl {
     url = "https://releases.fontba.se/linux/FontBase-${version}.AppImage";
-    hash = "sha256-3uC9VSDEN8KjTWVo8S6FrtkhcUMV3zUC3srJ2kQS0E0=";
+    hash = "sha256-fxW2lNAoxNiqjj8YY2AysrPqD/kapjaKm2g5vUS9Byk=";
   };
   appimageContents = appimageTools.extractType2 {
     pname = "fontbase";
