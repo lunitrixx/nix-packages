@@ -29,13 +29,13 @@
   componentName ? "client",
 }:
 let
-  version = "0.76.0";
+  version = "0.76.2";
 
   src = fetchFromGitHub {
     owner = "netbirdio";
     repo = "netbird";
     tag = "v${version}";
-    hash = "sha256-gICLAHmsn5Ylrm4tGaOQNr9ieuaSf3jt2KLDFrd08c0=";
+    hash = "sha256-PgJLtT5NEC7gqqZIe9Zi1VRUmzzJ50hbUAtMqaj2dmQ=";
   };
 
   /*
@@ -99,7 +99,7 @@ buildGoModule (finalAttrs: {
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-KVGCV89qGHrg2GQVw6MnftQswbdihcqozptjf5vs5BA=";
+  vendorHash = "sha256-36XD5NxkDoEwfFeZwHmqVJBy2RonaU1g1Sjy8GgZAD4=";
 
   nativeBuildInputs = [
     installShellFiles
