@@ -15,6 +15,13 @@
 - **netbird-dashboard:** Updated to v2.90.9.
 - **tinkerwell:** Updated to v5.17.2.
 
+### Fixed
+
+- **pi-coding-agent:** `pi` crashed on startup with
+  `ERR_MODULE_NOT_FOUND: @earendil-works/pi-telemetry`. Only three of the six
+  workspace packages the CLI needs at runtime were vendored into the output;
+  `pi-telemetry`, `pi-protocol` and `pi-client` are now copied as well.
+
 ### Added
 
 - **toneboosters-archive:** Added v2.1.8. Collection of 17 ToneBoosters audio

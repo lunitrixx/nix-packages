@@ -40,7 +40,10 @@ buildNpmPackage {
     local nm="$out/lib/node_modules/pi-monorepo/node_modules"
     for ws in @earendil-works/pi-ai:packages/ai \
               @earendil-works/pi-agent-core:packages/agent \
-              @earendil-works/pi-tui:packages/tui; do
+              @earendil-works/pi-tui:packages/tui \
+              @earendil-works/pi-telemetry:packages/telemetry \
+              @earendil-works/pi-protocol:packages/protocol \
+              @earendil-works/pi-client:packages/client; do
       IFS=: read -r pkg src <<< "$ws"
       rm "$nm/$pkg"
       cp -r "$src" "$nm/$pkg"
