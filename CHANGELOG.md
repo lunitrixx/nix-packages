@@ -24,6 +24,9 @@
 
 ### Added
 
+- **herdr:** Added v0.8.0. Terminal workspace manager for AI coding agents.
+  Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
+  Vendored from numtide/llm-agents.nix.
 - **toneboosters-archive:** Added v2.1.8. Collection of 17 ToneBoosters audio
   plugins (VST2, VST3, standalone). Prebuilt x86_64-linux binaries, unfree.
 - **vital:** Vendored from nixpkgs and bumped to v1.6.4 (ahead of nixpkgs at
