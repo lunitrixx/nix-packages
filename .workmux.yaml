@@ -1,0 +1,226 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/raine/workmux/main/schema.json
+#
+# One task, one worktree, one window.
+#
+# `workmux add feat/whatever -l pi` branches off main, lays out a single agent
+# and starts it with the task already in it. Agents do not share a checkout,
+# which matters here because a package set is evaluated as a whole: the by-name
+# overlay reads *every* pkgs/by-name/<shard>/<name>/package.nix, so two agents
+# adding packages in one tree would each break the other's `nix flake check`
+# with an error that belongs to neither of them.
+#
+# `workmux config reference` prints every option with its documentation.
+
+# The default branch, read rather than guessed: `origin/HEAD` points at `main`,
+# and `.pi/rules/workflow.md` forbids committing to it directly at all - a
+# pre-commit guard in `.git/hooks` enforces that, and worktrees share it.
+#
+# Named rather than `auto`. `auto` is a resolution chain (`main_branch`,
+# origin/HEAD, main, master) that lands on the same branch while costing a
+# reader a lookup. Named also means a worktree created while sitting on a
+# feature branch still branches from main instead of inheriting unfinished work.
+base_branch: main
+
+# workmux brings its own tmux session per worktree.
+#
+# The default `window` places the agent in the session you are already in, and
+# fails with "cannot determine the tmux session for window placement" when there
+# is none - which is exactly the situation a dispatch script runs in. `session`
+# removes that prerequisite; `workmux dashboard` is how you look at them.
+mode: session
+
+# A built-in, not one of the named profiles from ~/.config/workmux/config.yaml.
+#
+# `agents` is global-only, so `coder-pi` means nothing on a machine that has not
+# defined it - and this file is committed. The model tier is chosen per task via
+# the layouts below.
+agent: claude
+
+#-------------------------------------------------------------------------------
+# Panes
+#-------------------------------------------------------------------------------
+
+# ONE PANE PER WINDOW, everywhere in this file.
+#
+# An agent needs about 68 columns; below that it dies on "Rendered line 2 exceeds
+# terminal width", and at 80 columns any split leaves both halves under that.
+# There is also nothing to put in a second pane here - this repository has no dev
+# server, no watcher and no test runner that stays resident. Its only check is a
+# batch build.
+panes:
+  - command: <agent>
+    name: agent
+    focus: true
+
+#-------------------------------------------------------------------------------
+# Named layouts
+#-------------------------------------------------------------------------------
+
+# The two model tiers. The names are the contract with the orchestrator's
+# projects.yaml, which dispatches with `-l pi` or `-l claude`.
+#
+#   workmux add feat/x -l pi       DeepSeek V4 Pro through pi, for a version bump
+#                                  or one vendored package.nix
+#   workmux add feat/y -l claude   the expensive one, for the overlay, the flake's
+#                                  own outputs, or anything every consumer sees
+#
+# The profiles themselves (coder-pi, coder-claude) live in the global config,
+# because which model you drive and with whose credentials is a property of the
+# machine, not of this repository.
+layouts:
+  pi:
+    panes:
+      - command: <agent:coder-pi>
+        name: agent
+        focus: true
+
+  claude:
+    panes:
+      - command: <agent:coder-claude>
+        name: agent
+        focus: true
+
+#-------------------------------------------------------------------------------
+# Files
+#-------------------------------------------------------------------------------
+
+files:
+  # Per-checkout agent state, copied so a worktree starts with the same tool
+  # permissions instead of prompting on its first command. All three are
+  # gitignored (see `.gitignore`, which names the two settings.local.json files
+  # explicitly) and all three are personal - an agent that revokes a permission
+  # in its worktree must not change the main checkout's.
+  #
+  # None of the three exists in this checkout today. That is deliberate rather
+  # than sloppy: every entry is run through the glob crate, so a pattern with no
+  # match is silently skipped, and listing them now means they are picked up the
+  # day they appear. `.env` is listed for the same reason - `.env.example` is
+  # committed and documents the file, though nothing in this repository reads one
+  # yet.
+  #
+  # Not listed, and deliberately: `.mcp.json`, `.pi/settings.json` and the
+  # `.claude/{rules,skills}` symlinks are all tracked, so a worktree gets them
+  # from git. Copying a tracked file over its own checked-out copy is at best a
+  # no-op and at worst a way to smuggle uncommitted local edits into every
+  # worktree.
+  copy:
+    - .env
+    - .claude/settings.local.json
+    - .pi/settings.local.json
+
+  # Nothing. This is a finding, not an omission.
+  #
+  # What a worktree of a Node or PHP project has to share is the expensive
+  # gitignored build state - node_modules, vendor, a bundler cache. A Nix flake
+  # has none: every artefact lives in /nix/store, which is global to the machine,
+  # so a fresh worktree is already warm and `nix flake check` on it finishes in
+  # seconds against a store the main checkout filled. That is not a guess - the
+  # full check runs in under two seconds here precisely because every output is
+  # already valid in the store.
+  #
+  # The candidates were considered and rejected:
+  #
+  #   .direnv/      - there is no `.envrc` in this repository at all, and no dev
+  #                   shell to load (see post_create). The directory never exists,
+  #                   `.gitignore` notwithstanding.
+  #   result*       - gitignored, but they are GC roots, not shared state. Sharing
+  #                   them would let one worktree's `nix build` re-point the main
+  #                   checkout's root. They are removed instead, in pre_remove.
+  #   .claude/skills, .claude/rules
+  #                 - FORBIDDEN. They are *tracked* symlinks into `.pi/`
+  #                   (`git ls-files .claude` lists both, mode 120000). Symlinking
+  #                   a path that contains tracked files hides them from git,
+  #                   every worktree then reports them deleted, and an agent
+  #                   staging broadly deletes them from the repository. That cost
+  #                   345 MB of media in another project on 2026-08-09.
+  #
+  # THE RULE: only gitignored leaf directories belong in this list. Check with
+  # `git ls-files <path>` before adding one - an empty result is the permission.
+  symlink: []
+
+#-------------------------------------------------------------------------------
+# Hooks
+#-------------------------------------------------------------------------------
+
+# There is no dependency install and no dev shell here, so this is one cheap
+# command and the window opens immediately.
+#
+# What it is NOT: `nix develop`. This flake defines no `devShells` and no
+# `packages.default`, so `nix develop` exits with "does not provide attribute
+# devShells.x86_64-linux.default" - a post_create that fails on every single
+# worktree. Every tool this repository documents is reached through nix on
+# demand instead (`nix fmt`, `nix run nixpkgs#nurl`, `nix build`), so a worktree
+# needs no environment of its own and inherits nothing it will miss.
+#
+# What it does earn: a worktree's `.git` is a *file* pointing into the main
+# checkout, and every nix command here goes through the git+file fetcher. This
+# resolves the flake once so that, if that ever breaks, it breaks here with a
+# clear message instead of inside an agent's first build. It also materialises
+# the locked nixpkgs input before the agent's first command. Measured at 0.03s.
+#
+# `--no-write-lock-file` so the hook can never modify flake.lock: locking is a
+# reviewed change here ("Do not change dependencies without approval"), not
+# something a worktree does on creation.
+post_create:
+  - nix flake metadata --no-write-lock-file >/dev/null
+
+# The checks, cheapest first. Any failure aborts the merge.
+#
+# THE ODDITY FIRST, because it explains the shape of this list: this repository
+# has no CI pipeline. `.github/` holds issue templates and a PR template and no
+# workflows at all. So there is nothing to mirror, and the authority is instead
+# `AGENTS.md` under Conventions - "Run the formatter before finalizing changes:
+# nix fmt" and "Every change must pass the checks. nix flake check builds every
+# package we define". That is what is reproduced here, in that order.
+#
+# 1. THE FORMATTER, SCOPED TO WHAT THE BRANCH TOUCHED - and the scoping is the
+#    part to read before changing it. `nix fmt -- --check .` over the whole tree
+#    fails on this repository today: `pkgs/by-name-overlay.nix` and
+#    `pkgs/by-name/ne/netbird/package.nix` were written against an older nixfmt
+#    and disagree with the pinned nixfmt 1.3.1 about where a curried lambda's
+#    arguments break and where a leading `++` and `+` go.
+#    A whole-tree gate would therefore block every merge over two files no branch
+#    touched, which trains everyone to bypass it. Reformatting them is a separate
+#    change, on its own branch; until then the gate covers the diff, which is
+#    what it can honestly enforce.
+#
+#    The pipeline rather than `nix fmt -- --check $(git diff ...)`: zsh does not
+#    word-split an unquoted variable, so the file list would arrive as one
+#    argument. `xargs -0 -r` splits on NUL and, crucially, runs nothing at all
+#    when the branch changed no .nix file - a bare `nixfmt --check` with no
+#    arguments reads stdin and hangs the merge forever.
+#
+#    WM_TARGET_BRANCH is workmux's; the three-dot range compares against the
+#    merge base, so a branch is never blamed for main moving underneath it.
+#
+# 2. `nix flake check` - the real gate, and more expensive than its runtime
+#    suggests. `checks` is `packages`, so this *builds* every package this
+#    repository defines (netbird and all its components, the dashboard's npm
+#    build, zabbix74's flattened variants, the unfree AppImages). It is fast only
+#    because the store is already warm; on a version bump it is a full rebuild,
+#    which is exactly the point.
+#
+#    It prints "The check omitted these incompatible systems: aarch64-linux"
+#    every time. That is correct and not to be fixed with `--all-systems`:
+#    aarch64 would have to be emulated or sent to a remote builder, and the flake
+#    already filters per-system availability so the x86_64-only packages
+#    (claude-code, ray, tinkerwell, fontbase) are not the reason.
+#
+# THE TRAP THIS LIST CANNOT CATCH: nix reads a git flake through git, so an
+# untracked `package.nix` is invisible to both commands. A new package that was
+# never `git add`ed passes every check here by simply not existing. `workmux
+# merge` runs this against a committed branch, so it holds in practice - but an
+# agent running the same commands mid-work must stage first.
+pre_merge:
+  - git diff --name-only --diff-filter=ACMR "$WM_TARGET_BRANCH...HEAD" -- '*.nix' | tr '\n' '\0' | xargs -0 -r nix fmt -- --check
+  - nix flake check
+
+# Only the build symlinks, in case an agent ran `nix build` without `--no-link`.
+#
+# They are gitignored, so they do not block the removal - but each is a GC root,
+# and removing the worktree around one leaves a store path pinned by a link that
+# no longer exists. The main checkout carries three of them right now, which is
+# how routine this is. Nothing else needs cleaning: this repository produces no
+# build directory of its own, and the store is not ours to touch.
+pre_remove:
+  - rm -f result result-*
