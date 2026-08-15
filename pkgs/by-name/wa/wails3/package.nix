@@ -13,7 +13,7 @@
 
 buildGoModule (finalAttrs: {
   pname = "wails3";
-  version = "3.0.0-beta.5";
+  version = "3.0.0-beta.8";
 
   __structuredAttrs = true;
 
@@ -21,11 +21,11 @@ buildGoModule (finalAttrs: {
     owner = "wailsapp";
     repo = "wails";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-yhnHMnfoXp0bO3/oUqIRd7Xx6viNVpHwGpitnCRtVeg=";
+    hash = "sha256-F4kIw+Gljuc2iglnWTBjGxqW9C5uXsLrWUg/5mJnCV4=";
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-88RqtT9LyvMdIyhXA3wuIIdurwHcP3DaMl1HD338IV8=";
+  vendorHash = "sha256-y9LOY+zUNeBWaBzXC4bJhGbGGUHRBrTzWksLJSbuuYk=";
   modRoot = "v3";
 
   subPackages = [ "cmd/wails3" ];
