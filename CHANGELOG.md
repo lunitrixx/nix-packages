@@ -4,15 +4,14 @@
 
 ### Changed
 
-- **netbird:** Updated to v0.76.2.
-- **pi-coding-agent:** Updated to v0.84.1 (added telemetry, protocol, client workspace
-  build steps; new baseten + qwen-token-plan-individual model data).
-- **omp:** Updated to v17.2.10.
-- **claude-code:** Updated to v2.1.224.
-- **wails3:** Updated to v3.0.0-beta.5.
+- **netbird:** Updated to v0.77.0.
+- **pi-coding-agent:** Updated to v0.84.2.
+- **omp:** Updated to v17.3.4.
+- **claude-code:** Updated to v2.1.233.
+- **wails3:** Updated to v3.0.0-beta.8.
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.13.
-- **netbird-dashboard:** Updated to v2.90.9.
+- **netbird-dashboard:** Updated to v2.91.1.
 - **tinkerwell:** Updated to v5.17.2.
 
 ### Fixed
