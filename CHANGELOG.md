@@ -4,11 +4,11 @@
 
 ### Changed
 
-- **netbird:** Updated to v0.77.0.
+- **netbird:** Updated to v0.77.1.
 - **pi-coding-agent:** Updated to v0.84.2.
-- **omp:** Updated to v17.3.4.
-- **claude-code:** Updated to v2.1.233.
-- **wails3:** Updated to v3.0.0-beta.8.
+- **omp:** Updated to v18.0.4.
+- **claude-code:** Updated to v2.1.241.
+- **wails3:** Updated to v3.0.0-beta.12.
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.13.
 - **netbird-dashboard:** Updated to v2.91.1.
@@ -23,7 +23,7 @@
 
 ### Added
 
-- **herdr:** Added v0.8.0. Terminal workspace manager for AI coding agents.
+- **herdr:** Added v0.8.2. Terminal workspace manager for AI coding agents.
   Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
   Vendored from numtide/llm-agents.nix.
 - **toneboosters-archive:** Added v2.1.8. Collection of 17 ToneBoosters audio
