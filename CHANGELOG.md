@@ -28,6 +28,16 @@
 
 ### Added
 
+- **smoke tests:** `nix flake check` now executes the CLI packages, not
+  just building them. Each `smoke-*` check runs the binary with a version
+  command and requires the output to match a regex - exit status 0 alone
+  does not pass, so a binary that prints its help instead of a version
+  still goes red. Covers claude-code, omp, pi, wails3, herdr, tinkerwell
+  (on a virtual display), the netbird CLIs, netbird-dashboard (artifact
+  check) and all zabbix server/proxy/agent variants. GUI/VST packages stay
+  build-only; the list and the reasoning are in `pkgs/smoke-tests.nix`.
+  Note: `smoke-tinkerwell` requires `--option sandbox relaxed` (Electron
+  does not survive the strict build sandbox).
 - **herdr:** Added v0.8.2. Terminal workspace manager for AI coding agents.
   Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
   Vendored from numtide/llm-agents.nix.

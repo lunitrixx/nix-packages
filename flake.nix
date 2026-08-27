@@ -81,8 +81,14 @@
         lib.foldl' (acc: name: acc // flatten name pkgs.${name}) { } packageNames
       );
 
-      # `nix flake check` builds every package we define.
-      checks = forAllSystems (system: self.packages.${system});
+      # `nix flake check` builds every package we define, plus smoke tests
+      # that also execute the CLI packages (pkgs/smoke-tests.nix).
+      checks = forAllSystems (
+        system: (self.packages.${system} // import ./pkgs/smoke-tests.nix {
+          pkgs = pkgsFor system;
+          inherit lib system;
+        })
+      );
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
     };
