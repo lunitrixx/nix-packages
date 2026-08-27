@@ -7,19 +7,19 @@
   ripgrep,
 }:
 let
-  version = "0.84.2";
+  version = "0.84.3";
   src = fetchFromGitHub {
     owner = "earendil-works";
     repo = "pi";
     tag = "v${version}";
-    hash = "sha256-d29ft9otYxdHRWYIAX8KMHPpppToX9ME5LbPb1rPcYo=";
+    hash = "sha256-fC9pKgP2qD61ae5d7iOqP8anl88J1N1Bq8X8+aAjA2A=";
   };
 in
 buildNpmPackage {
   pname = "pi-coding-agent";
   inherit version src;
 
-  npmDepsHash = "sha256-6J5Efe+6ptCuR3VZojwYPZO8BBnnZsOQ4OAeB64uYOY=";
+  npmDepsHash = "sha256-cDx28+c4bwtQpiy5+BCvZhZezoZb4WRqfZj2eoEeMbw=";
   npmWorkspace = "packages/coding-agent";
   npmRebuildFlags = [ "--ignore-scripts" ];
 

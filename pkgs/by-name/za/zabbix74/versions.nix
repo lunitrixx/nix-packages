@@ -7,7 +7,7 @@
 #   - v74 pinned to 7.4.13. The hash is the upstream zabbix-7.4.13.tar.gz sha256.
 generic: {
   v74 = generic {
-    version = "7.4.13";
-    hash = "sha256-68T7BUr5GbEjYi/uqdTDmXEc8FB+8ZPi3tdnE6gO48Y=";
+    version = "7.4.14";
+    hash = "sha256-795fbxmJbwIAu1JF44ZgNWZyccex6EYm0mCV8kpvu0I=";
   };
 }
