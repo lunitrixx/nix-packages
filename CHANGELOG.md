@@ -17,7 +17,7 @@
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.14.
 - **netbird-dashboard:** Updated to v2.91.1.
-- **tinkerwell:** Updated to v5.17.2.
+- **tinkerwell:** Updated to v5.17.3.
 
 ### Fixed
 

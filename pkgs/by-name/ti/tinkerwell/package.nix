@@ -4,10 +4,10 @@
   appimageTools,
 }:
 let
-  version = "5.17.2";
+  version = "5.17.3";
   src = fetchurl {
     url = "https://download.tinkerwell.app/tinkerwell/Tinkerwell-${version}.AppImage";
-    hash = "sha256-IK+a6iEC00SzKLiXL4dqDIhZ4YrPL0Vdr+lmH9UQC4k=";
+    hash = "sha256-Jm7DX9ilbjR9ffrYZa0/pWU6zcTAwVFAdnlyqpsgvck=";
   };
   appimageContents = appimageTools.extractType2 {
     pname = "tinkerwell";
