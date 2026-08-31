@@ -13,7 +13,7 @@
   checks against the same snapshot, so it was left as is.
 - **omp:** Updated to v18.0.11.
 - **claude-code:** Updated to v2.1.251.
-- **wails3:** Updated to v3.0.0-beta.14.
+- **wails3:** Updated to v3.0.0-beta.16.
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.14.
 - **netbird-dashboard:** Updated to v2.91.1.

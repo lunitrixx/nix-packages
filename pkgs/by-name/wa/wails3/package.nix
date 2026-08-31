@@ -13,7 +13,7 @@
 
 buildGoModule (finalAttrs: {
   pname = "wails3";
-  version = "3.0.0-beta.14";
+  version = "3.0.0-beta.16";
 
   __structuredAttrs = true;
 
@@ -21,7 +21,7 @@ buildGoModule (finalAttrs: {
     owner = "wailsapp";
     repo = "wails";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-FNiJHGYJDKKToD1Zu5URMqYEcYfpvlzUgN/IcrjhTeM=";
+    hash = "sha256-TNEs3iST2k/eD0sNgjyUWR3/fwG2WjByuB+9N90Ph9A=";
   };
 
   proxyVendor = true;
