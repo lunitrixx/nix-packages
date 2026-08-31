@@ -29,7 +29,27 @@
   result. It now uses `xvfb-run -a`, which waits until the server accepts
   connections and picks a free display. The assertion is unchanged and the
   exit status is still passed through, so a crashing binary still fails.
-
+- **openjet:** Corrects #47, which left upstream's `cloud` extra
+  (`keyring`, `litellm`) out on the reasoning that it only drives the
+  "Slipstream" feature. That was wrong: `litellm` is the only runtime in
+  openjet that accepts a `base_url`, so without it the tool cannot be pointed
+  at an already-running OpenAI-compatible server - it fails with
+  `LiteLLMUnavailableError`. Both extra dependencies are now normal runtime
+  dependencies (nixpkgs has `keyring` 25.7.0 and `litellm` 1.86.0, both above
+  upstream's minimums, so no constraint is relaxed) and the closure grows by
+  about 137 MB. `pythonImportsCheck` imports `litellm`, `keyring` and
+  `src.litellm_client`, and the new `smoke-openjet-litellm` check runs a
+  one-shot chat against a loopback `base_url` to prove the runtime path is
+  live.
+- **openjet:** A NixOS host could not declare openjet's endpoint: after this
+  package's state redirect there is a single config path and `save_config()`
+  writes to it, so the file cannot belong to a generation. `load_config()` now
+  reads a system layer underneath the user's file - `/etc/openjet/config.yaml`,
+  overridable with `$OPENJET_SYSTEM_CONFIG`. It merges rather than replaces
+  (upstream's loop returned the first candidate that existed): system
+  `model_profiles` are always present and win a name collision, every other key
+  is used only where the user's file has no value. `save_config()` still writes
+  the user file only. New check `smoke-openjet-system-config`.
 - **pi-coding-agent:** `pi` crashed on startup with
   `ERR_MODULE_NOT_FOUND: @earendil-works/pi-telemetry`. Only three of the six
   workspace packages the CLI needs at runtime were vendored into the output;

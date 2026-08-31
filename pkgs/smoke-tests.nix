@@ -71,6 +71,124 @@ let
         runTest "openjet" "${pkgs.openjet}/bin/openjet" "--version"
           "^open-jet ${lib.escapeRegex pkgs.openjet.version}$";
     };
+    # The `cloud` extra is only useful if the litellm runtime actually runs, and
+    # nothing about the closure proves that: litellm is imported lazily inside
+    # `LiteLLMClient._import_litellm`, so a missing dependency surfaces as
+    # `LiteLLMUnavailableError` at chat time and nowhere earlier. This test
+    # writes upstream's documented `model_profiles` entry for an
+    # already-running OpenAI-compatible server into a scratch state directory,
+    # points it at a loopback port nothing listens on, and requires the failure
+    # to be a *connection* error - which is only reachable once litellm is
+    # importable. `airgapped: true` keeps the run offline (it also blocks
+    # litellm's own model-cost-map fetch, which warns and falls back to its
+    # bundled copy), so this works in the build sandbox.
+    openjet-litellm = {
+      package = pkgs.openjet;
+      test =
+        pkgs.runCommand "smoke-openjet-litellm"
+          {
+            preferLocalBuild = true;
+          }
+          ''
+            mkdir -p $out
+            export HOME=$TMPDIR/home
+            export OPENJET_HOME=$HOME/state
+            mkdir -p "$OPENJET_HOME"
+            cat > "$OPENJET_HOME/config.yaml" <<'EOF'
+            active_model_profile: llama-server
+            runtime: litellm
+            provider: openai-compatible
+            model: openai/local
+            base_url: http://127.0.0.1:18099/v1
+            context_window_tokens: 32768
+            airgapped: true
+            model_profiles:
+              - name: llama-server
+                runtime: litellm
+                provider: openai-compatible
+                model: openai/local
+                base_url: http://127.0.0.1:18099/v1
+                context_window_tokens: 32768
+            EOF
+
+            ${pkgs.openjet}/bin/openjet --status > $out/status 2>&1
+            grep -E -- "^Runtime: litellm$" $out/status
+            grep -E -- "^Air-gapped: true$" $out/status
+
+            ${pkgs.openjet}/bin/openjet chat "say hi" > $out/log 2>&1 || true
+            if grep -q -- "LiteLLM support is not installed" $out/log; then
+              echo "smoke-openjet-litellm: the cloud extra is missing" >&2
+              exit 1
+            fi
+            grep -E -- "LiteLLM provider .openai-compatible. connection failed" $out/log
+            echo "smoke-openjet-litellm: litellm runtime reached the configured base_url"
+          '';
+    };
+    # The system config layer, which is what lets a NixOS host declare its
+    # endpoint. Four things have to hold at once and none of them is visible
+    # from the closure: a system-only config is used, a system profile survives
+    # a user file that does not mention it, a key the user set keeps the user's
+    # value, and `save_config` writes the user file and never the system one.
+    # The read-only system file is the guard - a write there fails the build.
+    openjet-system-config = {
+      package = pkgs.openjet;
+      test =
+        pkgs.runCommand "smoke-openjet-system-config"
+          {
+            preferLocalBuild = true;
+          }
+          ''
+            mkdir -p $out
+            export HOME=$TMPDIR/home
+            export OPENJET_HOME=$HOME/state
+            export OPENJET_SYSTEM_CONFIG=$HOME/etc/openjet/config.yaml
+            mkdir -p "$OPENJET_HOME" "$HOME/etc/openjet"
+            cat > "$OPENJET_SYSTEM_CONFIG" <<'EOF'
+            active_model_profile: llamacpp-quadlet
+            runtime: litellm
+            provider: openai-compatible
+            model: openai/local
+            base_url: http://127.0.0.1:18099/v1
+            context_window_tokens: 32768
+            airgapped: true
+            model_profiles:
+              - name: llamacpp-quadlet
+                runtime: litellm
+                provider: openai-compatible
+                model: openai/local
+                base_url: http://127.0.0.1:18099/v1
+                context_window_tokens: 32768
+            EOF
+            chmod 0444 "$OPENJET_SYSTEM_CONFIG"
+            system_before=$(sha256sum < "$OPENJET_SYSTEM_CONFIG")
+
+            # 1. system config alone: the host's profile is active, and there
+            #    is still no user file.
+            ${pkgs.openjet}/bin/openjet --models > $out/models-system-only 2>&1
+            grep -E -- "^Active model preset: llamacpp-quadlet$" $out/models-system-only
+            test ! -e "$OPENJET_HOME/config.yaml"
+
+            # 2. first save creates the user file, and writes nothing to the
+            #    read-only system file.
+            ${pkgs.openjet}/bin/openjet --context 4096 > $out/context 2>&1
+            test -f "$OPENJET_HOME/config.yaml"
+            test "$(sha256sum < "$OPENJET_SYSTEM_CONFIG")" = "$system_before"
+
+            # 3. both present, merged in both directions: the user's
+            #    context_window_tokens is the effective one, while the system's
+            #    profile entry is still listed and still carries the host's own
+            #    value - a name collision goes to the system, by design.
+            grep -E -- "^context_window_tokens: 4096$" "$OPENJET_HOME/config.yaml"
+            ${pkgs.openjet}/bin/openjet --status > $out/status-merged 2>&1
+            grep -E -- "^Context window: 4096$" $out/status-merged
+            ${pkgs.openjet}/bin/openjet --models > $out/models-merged 2>&1
+            grep -E -- "llamacpp-quadlet \(active\): context=32768" $out/models-merged
+            test "$(sha256sum < "$OPENJET_SYSTEM_CONFIG")" = "$system_before"
+
+            cp "$OPENJET_HOME/config.yaml" $out/user-config.yaml
+            echo "smoke-openjet-system-config: system layer merged, user file writable"
+          '';
+    };
     netbird = {
       package = pkgs.netbird;
       test = runTest "netbird" "${pkgs.netbird}/bin/netbird" "version" "^[0-9]+\\.[0-9]+\\.[0-9]+";
