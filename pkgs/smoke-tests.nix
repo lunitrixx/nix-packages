@@ -29,14 +29,16 @@ let
   # arguments and prints its help also exits 0.
   runTest =
     name: bin: args: assertion:
-    pkgs.runCommand "smoke-${name}" {
-      preferLocalBuild = true;
-    } ''
-      mkdir -p $out
-      ${bin} ${args} > $out/log 2>&1
-      grep -E -- "${assertion}" $out/log
-      echo "smoke-${name}: ${name} ran and matched ${assertion}"
-    '';
+    pkgs.runCommand "smoke-${name}"
+      {
+        preferLocalBuild = true;
+      }
+      ''
+        mkdir -p $out
+        ${bin} ${args} > $out/log 2>&1
+        grep -E -- "${assertion}" $out/log
+        echo "smoke-${name}: ${name} ran and matched ${assertion}"
+      '';
 
   # <name> -> { package = <the drv it tests>; test = <the smoke drv> }
   # `package` drives the availability filter, `test` is what gets built.
@@ -63,11 +65,15 @@ let
     };
     netbird-management = {
       package = pkgs.netbird-management;
-      test = runTest "netbird-management" "${pkgs.netbird-management}/bin/netbird-mgmt" "--version" "netbird-mgmt version [0-9]+\\.[0-9]+\\.[0-9]+";
+      test =
+        runTest "netbird-management" "${pkgs.netbird-management}/bin/netbird-mgmt" "--version"
+          "netbird-mgmt version [0-9]+\\.[0-9]+\\.[0-9]+";
     };
     netbird-signal = {
       package = pkgs.netbird-signal;
-      test = runTest "netbird-signal" "${pkgs.netbird-signal}/bin/netbird-signal" "--version" "netbird-signal version [0-9]+\\.[0-9]+\\.[0-9]+";
+      test =
+        runTest "netbird-signal" "${pkgs.netbird-signal}/bin/netbird-signal" "--version"
+          "netbird-signal version [0-9]+\\.[0-9]+\\.[0-9]+";
     };
     netbird-proxy = {
       package = pkgs.netbird-proxy;
@@ -77,13 +83,15 @@ let
     netbird-dashboard = {
       package = pkgs.netbird-dashboard;
       test =
-        pkgs.runCommand "smoke-netbird-dashboard" {
-          preferLocalBuild = true;
-        } ''
-          mkdir -p $out
-          test -f ${pkgs.netbird-dashboard}/index.html
-          echo "smoke-netbird-dashboard: index.html present"
-        '';
+        pkgs.runCommand "smoke-netbird-dashboard"
+          {
+            preferLocalBuild = true;
+          }
+          ''
+            mkdir -p $out
+            test -f ${pkgs.netbird-dashboard}/index.html
+            echo "smoke-netbird-dashboard: index.html present"
+          '';
     };
     # The overlay exposes zabbix74 as an attrset (pkgs.zabbix74.server); the
     # flat zabbix74-server names only exist in the flake's packages output.
@@ -101,15 +109,21 @@ let
     };
     zabbix74-server-mysql = {
       package = pkgs.zabbix74.server-mysql;
-      test = runTest "zabbix74-server-mysql" "${pkgs.zabbix74.server-mysql}/bin/zabbix_server" "-V" "Zabbix";
+      test =
+        runTest "zabbix74-server-mysql" "${pkgs.zabbix74.server-mysql}/bin/zabbix_server" "-V"
+          "Zabbix";
     };
     zabbix74-server-pgsql = {
       package = pkgs.zabbix74.server-pgsql;
-      test = runTest "zabbix74-server-pgsql" "${pkgs.zabbix74.server-pgsql}/bin/zabbix_server" "-V" "Zabbix";
+      test =
+        runTest "zabbix74-server-pgsql" "${pkgs.zabbix74.server-pgsql}/bin/zabbix_server" "-V"
+          "Zabbix";
     };
     zabbix74-proxy-sqlite = {
       package = pkgs.zabbix74.proxy-sqlite;
-      test = runTest "zabbix74-proxy-sqlite" "${pkgs.zabbix74.proxy-sqlite}/bin/zabbix_proxy" "-V" "Zabbix";
+      test =
+        runTest "zabbix74-proxy-sqlite" "${pkgs.zabbix74.proxy-sqlite}/bin/zabbix_proxy" "-V"
+          "Zabbix";
     };
     zabbix74-proxy-mysql = {
       package = pkgs.zabbix74.proxy-mysql;
@@ -121,7 +135,9 @@ let
     };
     claude-code = {
       package = pkgs.claude-code;
-      test = runTest "claude-code" "${pkgs.claude-code}/bin/claude" "--version" "^[0-9]+\\.[0-9]+\\.[0-9]+";
+      test =
+        runTest "claude-code" "${pkgs.claude-code}/bin/claude" "--version"
+          "^[0-9]+\\.[0-9]+\\.[0-9]+";
     };
     # Tinkerwell is an Electron app: it refuses to start without an X
     # server and it does not survive the strict build sandbox, so this test
@@ -134,31 +150,31 @@ let
     tinkerwell = {
       package = pkgs.tinkerwell;
       test =
-        pkgs.runCommand "smoke-tinkerwell" {
-          preferLocalBuild = true;
-          __noChroot = true;
-          nativeBuildInputs = [ pkgs.xvfb ];
-        } ''
-          mkdir -p $out
-          export HOME=$TMPDIR/home
-          mkdir -p $HOME
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          xvfb_pid=$!
-          sleep 2
-          DISPLAY=:99 ${pkgs.tinkerwell}/bin/tinkerwell --version > $out/log 2>&1
-          kill $xvfb_pid 2>/dev/null || true
-          grep -E -- "tinkerwell" $out/log
-          echo "smoke-tinkerwell: tinkerwell ran and matched tinkerwell"
-        '';
+        pkgs.runCommand "smoke-tinkerwell"
+          {
+            preferLocalBuild = true;
+            __noChroot = true;
+            nativeBuildInputs = [ pkgs.xvfb ];
+          }
+          ''
+            mkdir -p $out
+            export HOME=$TMPDIR/home
+            mkdir -p $HOME
+            Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+            xvfb_pid=$!
+            sleep 2
+            DISPLAY=:99 ${pkgs.tinkerwell}/bin/tinkerwell --version > $out/log 2>&1
+            kill $xvfb_pid 2>/dev/null || true
+            grep -E -- "tinkerwell" $out/log
+            echo "smoke-tinkerwell: tinkerwell ran and matched tinkerwell"
+          '';
     };
   };
 in
 lib.listToAttrs (
-  lib.map (
-    name: lib.nameValuePair "smoke-${name}" tests.${name}.test
-  ) (
-    lib.filter (
-      name: lib.meta.availableOn pkgs.stdenv.hostPlatform tests.${name}.package
-    ) (lib.attrNames tests)
+  lib.map (name: lib.nameValuePair "smoke-${name}" tests.${name}.test) (
+    lib.filter (name: lib.meta.availableOn pkgs.stdenv.hostPlatform tests.${name}.package) (
+      lib.attrNames tests
+    )
   )
 )
