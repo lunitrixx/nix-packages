@@ -159,6 +159,14 @@ let
     #   nix build .#checks.x86_64-linux.smoke-tinkerwell --option sandbox relaxed
     # (with the default sandbox = true it is refused; the package build
     # itself is still covered by the regular checks)
+    #
+    # The display comes from xvfb-run rather than a hand-started `Xvfb :99`
+    # plus `sleep 2`: xvfb-run waits until the server actually accepts
+    # connections and `-a` picks a free display number, so neither a slow
+    # start under build load nor a display collision (__noChroot shares
+    # /tmp/.X11-unix with the host) can decide the result. It also reaps the
+    # server itself and passes the command's exit status through, so a
+    # crashing tinkerwell still fails the check.
     tinkerwell = {
       package = pkgs.tinkerwell;
       test =
@@ -166,17 +174,14 @@ let
           {
             preferLocalBuild = true;
             __noChroot = true;
-            nativeBuildInputs = [ pkgs.xvfb ];
+            nativeBuildInputs = [ pkgs.xvfb-run ];
           }
           ''
             mkdir -p $out
             export HOME=$TMPDIR/home
             mkdir -p $HOME
-            Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-            xvfb_pid=$!
-            sleep 2
-            DISPLAY=:99 ${pkgs.tinkerwell}/bin/tinkerwell --version > $out/log 2>&1
-            kill $xvfb_pid 2>/dev/null || true
+            xvfb-run -a --server-args="-screen 0 1024x768x24" \
+              ${pkgs.tinkerwell}/bin/tinkerwell --version > $out/log 2>&1
             grep -E -- "tinkerwell" $out/log
             echo "smoke-tinkerwell: tinkerwell ran and matched tinkerwell"
           '';

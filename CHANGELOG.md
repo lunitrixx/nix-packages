@@ -5,21 +5,30 @@
 ### Changed
 
 - **netbird:** Updated to v0.77.1.
-- **pi-coding-agent:** Updated to v0.84.3. The vendored `models-data`
+- **pi-coding-agent:** Updated to v0.84.4. The vendored `models-data`
   snapshot was refreshed from the published `@earendil-works/pi-ai` package
   (the `data/` directory is not in the upstream git tag); the old snapshot
   still routed xAI models through `openai-completions`, which no longer type
-  checks against the 0.84.3 provider factories.
-- **omp:** Updated to v18.0.6. v18.0.7 exists as a tag but has no release
-  assets, so 18.0.6 is the newest buildable release.
-- **claude-code:** Updated to v2.1.247.
-- **wails3:** Updated to v3.0.0-beta.14.
+  checks against the 0.84.x provider factories. The 0.84.4 patch bump type
+  checks against the same snapshot, so it was left as is.
+- **omp:** Updated to v18.0.11.
+- **claude-code:** Updated to v2.1.251.
+- **wails3:** Updated to v3.0.0-beta.16.
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.14.
 - **netbird-dashboard:** Updated to v2.91.1.
-- **tinkerwell:** Updated to v5.17.2.
+- **tinkerwell:** Updated to v5.17.3.
 
 ### Fixed
+
+- **smoke tests:** `smoke-tinkerwell` was flaky under build load - it failed
+  once with exit 139 during a parallel `nix flake check` and passed 7/7 when
+  run alone. It started `Xvfb :99` by hand and waited with `sleep 2`, so a
+  slow server start under load and a collision on the fixed display number
+  (`__noChroot` shares `/tmp/.X11-unix` with the host) could both decide the
+  result. It now uses `xvfb-run -a`, which waits until the server accepts
+  connections and picks a free display. The assertion is unchanged and the
+  exit status is still passed through, so a crashing binary still fails.
 
 - **pi-coding-agent:** `pi` crashed on startup with
   `ERR_MODULE_NOT_FOUND: @earendil-works/pi-telemetry`. Only three of the six
