@@ -43,15 +43,43 @@
 #     OTLP/HTTP export round-trip against a local collector was verified by hand
 #     on 2026-08-31 and succeeded.
 #
-#   - THE `mcp` EXTRA IS IN, THE `cloud` EXTRA IS DELIBERATELY OUT. `openjet mcp`
-#     is a documented subcommand, so `mcp` is a normal runtime dependency here.
-#     `cloud` (`keyring`, `litellm`) drives upstream's "Slipstream" feature,
-#     which needs an OpenAI Codex subscription nobody here has, and `litellm`
-#     drags in a large dependency tree for it. Leaving it out is safe because
-#     every optional import is lazy - `litellm` inside a function in
+#   - BOTH THE `mcp` AND THE `cloud` EXTRA ARE IN. `openjet mcp` is a documented
+#     subcommand, so `mcp` is a normal runtime dependency here.
+#
+#     `cloud` (`keyring`, `litellm`) was left out when this package was added,
+#     on the reasoning that it only drives upstream's "Slipstream" feature and
+#     needs an OpenAI Codex subscription. That reasoning was wrong, and this is
+#     the correction. `litellm` is the *only* runtime in openjet that accepts a
+#     `base_url` for an OpenAI-compatible endpoint: `src/runtime_registry.py:73`
+#     passes `base_url` into `LiteLLMClient`, and `src/airgap.py` explicitly
+#     permits a loopback one. The default `llama_cpp` runtime cannot be pointed
+#     anywhere - `src/runtime_registry.py:82` builds `LlamaServerClient` without
+#     `host`/`port`, so its `127.0.0.1:18080` defaults stand and it *spawns its
+#     own* `llama-server`; `openai_codex` does take a `base_url` but speaks
+#     ChatGPT's Responses API under OAuth, which a llama-server does not
+#     implement. So without `cloud`, an openjet on a host that already runs an
+#     OpenAI-compatible server cannot talk to it at all - it dies in
+#     `_import_litellm` (`src/litellm_client.py:158-165`) with
+#     `LiteLLMUnavailableError`. Upstream documents exactly this case
+#     (<https://www.openjet.dev/docs>, "Connecting OpenJet to Existing Local
+#     Servers") and its very first line is `pipx install 'open-jet[cloud]'`.
+#     Loopback servers get a local placeholder key automatically, so no API key
+#     is required or stored, and `airgapped: true` still rejects every
+#     non-loopback endpoint. Both hosts that carry openjet run such a server.
+#
+#     The imports stay lazy either way - `litellm` inside a function in
 #     `src/litellm_client.py`, `keyring` inside three functions in
-#     `src/api_auth.py` - so no unrelated code path breaks, and the extra can be
-#     added later without changing this package's shape.
+#     `src/api_auth.py` - so adding the extra changes nothing structurally; it
+#     only makes those functions succeed. Upstream asks for `keyring>=25` and
+#     `litellm>=1.74`; the pinned nixpkgs has 25.7.0 and 1.83.14, so unlike the
+#     OpenTelemetry entry above no constraint has to be relaxed.
+#
+#     Cost, measured: the closure goes from 1.13 GB to 1.26 GB. Nothing
+#     alarming in it - no CUDA, no browser - mostly `openai`, `aiohttp`,
+#     `cryptography` (via keyring's SecretStorage backend) and their
+#     dependencies. One oddity worth knowing: nixpkgs' `python3Packages.openai`
+#     carries its voice helpers, so `sounddevice` and `portaudio` end up in the
+#     closure of a terminal tool that never plays audio.
 #
 #     TWO MORE LAZY IMPORTS ARE NOT DECLARED BY UPSTREAM AT ALL, and are left
 #     out here too: `src/runtime_limits.py:81-84` imports `gguf` and
@@ -213,6 +241,12 @@ python3Packages.buildPythonApplication (finalAttrs: {
 
     # The `mcp` extra - a normal dependency here, see the header.
     mcp
+
+    # The `cloud` extra. litellm is the only runtime that can be pointed at an
+    # already-running OpenAI-compatible server; keyring comes with it. See the
+    # header.
+    keyring
+    litellm
   ];
 
   # Redirect the install root at a writable per-user path. See the header for
@@ -276,11 +310,20 @@ python3Packages.buildPythonApplication (finalAttrs: {
   # OTLP-over-HTTP exporters at module level, so importing it here is what
   # proves the relaxed constraint against 1.34.0. src.cli is the entry point and
   # pulls in the rest of the tree; openjet/open_jet are the SDK shim packages.
+  #
+  # src.litellm_client is the module behind the `cloud` extra, but importing it
+  # proves little on its own: it imports litellm inside `_import_litellm`
+  # (line 160), not at module level. So litellm and keyring are imported
+  # directly as well - that is what makes the build go red if the extra is
+  # dropped again or its dependencies stop importing.
   pythonImportsCheck = [
     "src.cli"
     "src.session_logging"
     "src.app_telemetry"
     "src.observation.bridge"
+    "src.litellm_client"
+    "litellm"
+    "keyring"
     "openjet"
     "open_jet"
   ];

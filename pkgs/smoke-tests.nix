@@ -71,6 +71,59 @@ let
         runTest "openjet" "${pkgs.openjet}/bin/openjet" "--version"
           "^open-jet ${lib.escapeRegex pkgs.openjet.version}$";
     };
+    # The `cloud` extra is only useful if the litellm runtime actually runs, and
+    # nothing about the closure proves that: litellm is imported lazily inside
+    # `LiteLLMClient._import_litellm`, so a missing dependency surfaces as
+    # `LiteLLMUnavailableError` at chat time and nowhere earlier. This test
+    # writes upstream's documented `model_profiles` entry for an
+    # already-running OpenAI-compatible server into a scratch state directory,
+    # points it at a loopback port nothing listens on, and requires the failure
+    # to be a *connection* error - which is only reachable once litellm is
+    # importable. `airgapped: true` keeps the run offline (it also blocks
+    # litellm's own model-cost-map fetch, which warns and falls back to its
+    # bundled copy), so this works in the build sandbox.
+    openjet-litellm = {
+      package = pkgs.openjet;
+      test =
+        pkgs.runCommand "smoke-openjet-litellm"
+          {
+            preferLocalBuild = true;
+          }
+          ''
+            mkdir -p $out
+            export HOME=$TMPDIR/home
+            export OPENJET_HOME=$HOME/state
+            mkdir -p "$OPENJET_HOME"
+            cat > "$OPENJET_HOME/config.yaml" <<'EOF'
+            active_model_profile: llama-server
+            runtime: litellm
+            provider: openai-compatible
+            model: openai/local
+            base_url: http://127.0.0.1:18099/v1
+            context_window_tokens: 32768
+            airgapped: true
+            model_profiles:
+              - name: llama-server
+                runtime: litellm
+                provider: openai-compatible
+                model: openai/local
+                base_url: http://127.0.0.1:18099/v1
+                context_window_tokens: 32768
+            EOF
+
+            ${pkgs.openjet}/bin/openjet --status > $out/status 2>&1
+            grep -E -- "^Runtime: litellm$" $out/status
+            grep -E -- "^Air-gapped: true$" $out/status
+
+            ${pkgs.openjet}/bin/openjet chat "say hi" > $out/log 2>&1 || true
+            if grep -q -- "LiteLLM support is not installed" $out/log; then
+              echo "smoke-openjet-litellm: the cloud extra is missing" >&2
+              exit 1
+            fi
+            grep -E -- "LiteLLM provider .openai-compatible. connection failed" $out/log
+            echo "smoke-openjet-litellm: litellm runtime reached the configured base_url"
+          '';
+    };
     netbird = {
       package = pkgs.netbird;
       test = runTest "netbird" "${pkgs.netbird}/bin/netbird" "version" "^[0-9]+\\.[0-9]+\\.[0-9]+";

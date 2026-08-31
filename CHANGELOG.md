@@ -29,7 +29,18 @@
   result. It now uses `xvfb-run -a`, which waits until the server accepts
   connections and picks a free display. The assertion is unchanged and the
   exit status is still passed through, so a crashing binary still fails.
-
+- **openjet:** Corrects #47, which left upstream's `cloud` extra
+  (`keyring`, `litellm`) out on the reasoning that it only drives the
+  "Slipstream" feature. That was wrong: `litellm` is the only runtime in
+  openjet that accepts a `base_url`, so without it the tool cannot be pointed
+  at an already-running OpenAI-compatible server - it fails with
+  `LiteLLMUnavailableError`. Both extra dependencies are now normal runtime
+  dependencies (nixpkgs has `keyring` 25.7.0 and `litellm` 1.83.14, both above
+  upstream's minimums, so no constraint is relaxed) and the closure grows by
+  about 130 MB. `pythonImportsCheck` imports `litellm`, `keyring` and
+  `src.litellm_client`, and the new `smoke-openjet-litellm` check runs a
+  one-shot chat against a loopback `base_url` to prove the runtime path is
+  live.
 - **pi-coding-agent:** `pi` crashed on startup with
   `ERR_MODULE_NOT_FOUND: @earendil-works/pi-telemetry`. Only three of the six
   workspace packages the CLI needs at runtime were vendored into the output;
