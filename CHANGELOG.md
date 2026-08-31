@@ -5,11 +5,12 @@
 ### Changed
 
 - **netbird:** Updated to v0.77.1.
-- **pi-coding-agent:** Updated to v0.84.3. The vendored `models-data`
+- **pi-coding-agent:** Updated to v0.84.4. The vendored `models-data`
   snapshot was refreshed from the published `@earendil-works/pi-ai` package
   (the `data/` directory is not in the upstream git tag); the old snapshot
   still routed xAI models through `openai-completions`, which no longer type
-  checks against the 0.84.3 provider factories.
+  checks against the 0.84.x provider factories. The 0.84.4 patch bump type
+  checks against the same snapshot, so it was left as is.
 - **omp:** Updated to v18.0.11.
 - **claude-code:** Updated to v2.1.251.
 - **wails3:** Updated to v3.0.0-beta.14.
