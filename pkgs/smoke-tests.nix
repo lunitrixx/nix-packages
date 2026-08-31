@@ -59,6 +59,18 @@ let
       package = pkgs.herdr;
       test = runTest "herdr" "${pkgs.herdr}/bin/herdr" "--version" "^herdr [0-9]+\\.[0-9]+\\.[0-9]+";
     };
+    # `--version` returns before load_config(), so it reads no config file and
+    # touches no network - it prints "open-jet <version>" from
+    # importlib.metadata. It does create an empty state directory, because
+    # src/config.py resolves the (redirected) install root at import time; that
+    # is fine in the build sandbox, where HOME is unwritable and the mkdir is
+    # swallowed. Anchored and version-pinned so a wrong version fails.
+    openjet = {
+      package = pkgs.openjet;
+      test =
+        runTest "openjet" "${pkgs.openjet}/bin/openjet" "--version"
+          "^open-jet ${lib.escapeRegex pkgs.openjet.version}$";
+    };
     netbird = {
       package = pkgs.netbird;
       test = runTest "netbird" "${pkgs.netbird}/bin/netbird" "version" "^[0-9]+\\.[0-9]+\\.[0-9]+";

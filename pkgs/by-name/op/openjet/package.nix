@@ -1,0 +1,301 @@
+# OpenJet - written fresh; nixpkgs does not ship it. First Python package in
+# this repository.
+#
+# Non-obvious decisions, in the order a reader will trip over them:
+#
+#   - SOURCE IS THE PyPI WHEEL, not a GitHub tag. Upstream's newest tag is
+#     `v0.5.0` but the `pyproject.toml` at that tag declares
+#     `version = "0.4.31"`, and there is no `v0.4.31` tag at all - the tag
+#     numbering and the declared version disagree upstream, so a tag is not a
+#     usable version pin. The repository tree also carries three overlapping
+#     Python roots (`src/`, `open_jet/`, `openjet/`) that
+#     `[tool.setuptools.packages.find]` all matches, while the wheel contains
+#     only what actually ships. PyPI publishes no sdist, so building from
+#     released source is not an option either. The wheel is `py3-none-any`
+#     (pure Python, nothing to autoPatchelf), so the *wheel* imposes no
+#     architecture restriction. `meta.platforms` is still `linux`, which is what
+#     this repository builds and what upstream's classifiers list (Linux and
+#     Windows). Note the cost: that admits openjet to `checks.aarch64-linux`,
+#     where `faster-whisper` pulls in ctranslate2/onnxruntime/av/numpy and is
+#     unlikely to be cached. `nix flake check` here omits aarch64 today, so
+#     nothing pays for it yet; narrow to `[ "x86_64-linux" ]` if that changes and
+#     aarch64 is not a real target.
+#
+#   - THIS IS THE CLI ONLY. `buildPythonApplication` sets
+#     `passthru.pythonModule = false`, and the package lands at `pkgs.openjet`,
+#     not in `python3Packages`, so upstream's Python SDK is NOT importable by a
+#     consumer: `python3.withPackages (ps: [ pkgs.openjet ])` builds without
+#     error and `import openjet` then fails. The wheel does ship the SDK shims
+#     (`openjet/`, `openjet/sdk/`, `open_jet/`) and `pythonImportsCheck` checks
+#     them, but only inside this package's own environment. Exposing the SDK
+#     would mean a `python3Packages.openjet`, which would put a top-level `src`
+#     package on shared Python paths - upstream's own naming, and a real
+#     collision hazard. Not done until someone actually needs the SDK.
+#
+#   - OPENTELEMETRY CONSTRAINTS ARE RELAXED. Upstream requires
+#     `opentelemetry-sdk>=1.40` and `opentelemetry-exporter-otlp-proto-http>=1.40`;
+#     this repository's pinned nixpkgs has 1.34.0 and bumping `flake.lock` for
+#     one package is not on the table. The relaxation is proved rather than
+#     assumed: `src/session_logging.py` is the only module that touches the OTel
+#     API (it imports the SDK's logs/metrics/trace providers and all three
+#     OTLP-over-HTTP exporters at module level), so `pythonImportsCheck` imports
+#     it. The build goes red if the 1.34 API cannot carry those imports. A full
+#     OTLP/HTTP export round-trip against a local collector was verified by hand
+#     on 2026-08-31 and succeeded.
+#
+#   - THE `mcp` EXTRA IS IN, THE `cloud` EXTRA IS DELIBERATELY OUT. `openjet mcp`
+#     is a documented subcommand, so `mcp` is a normal runtime dependency here.
+#     `cloud` (`keyring`, `litellm`) drives upstream's "Slipstream" feature,
+#     which needs an OpenAI Codex subscription nobody here has, and `litellm`
+#     drags in a large dependency tree for it. Leaving it out is safe because
+#     every optional import is lazy - `litellm` inside a function in
+#     `src/litellm_client.py`, `keyring` inside three functions in
+#     `src/api_auth.py` - so no unrelated code path breaks, and the extra can be
+#     added later without changing this package's shape.
+#
+#     TWO MORE LAZY IMPORTS ARE NOT DECLARED BY UPSTREAM AT ALL, and are left
+#     out here too: `src/runtime_limits.py:81-84` imports `gguf` and
+#     `transformers.models.qwen2.tokenization_qwen2` inside
+#     `_get_local_gguf_token_counter`, under `except ImportError: return None`.
+#     Neither is in the wheel's METADATA. Consequence: exact token counting for
+#     local Qwen2-family GGUF models silently falls back to the estimator.
+#     Both exist in the pinned nixpkgs (`python3Packages.gguf`,
+#     `python3Packages.transformers`), so this can be turned on - but
+#     `transformers` is a very large closure to add for one code path, and
+#     adding an undeclared dependency puts this package ahead of upstream's own
+#     metadata. Recorded rather than fixed; revisit if exact counts matter.
+#
+#   - STATE IS REDIRECTED OUT OF THE STORE (`postInstall`). Upstream writes its
+#     config, its downloaded GGUF models and its lifetime token totals *next to
+#     its own code*, which under Nix is the read-only store: `openjet setup`
+#     would try to write `config.yaml` into `/nix/store`. Eight call sites go
+#     through `openjet_install_root()` in `src/app_paths.py`, so that one
+#     function is repointed at `$OPENJET_HOME`, else `$XDG_DATA_HOME/openjet`,
+#     else `~/.local/share/openjet`. The three sites that bypass it are patched
+#     individually: `src/config.py` (`CONFIG_PATH`), `src/app.py`
+#     (`totals.json`) and `src/setup.py` (the model-discovery root).
+#
+#     The directory is created eagerly inside the accessor, and two failure
+#     modes are guarded because `src/config.py:11`/`:38` call it at *import*
+#     time, so anything escaping breaks even `openjet --version`: a failing
+#     `mkdir` (read-only or absent parent, e.g. `HOME=/homeless-shelter` in the
+#     build sandbox) raises `OSError`, and `Path.home()` raises `RuntimeError`
+#     when there is neither `$HOME` nor a passwd entry for the uid - a container
+#     started with `--user 12345`. The latter falls back to a per-uid directory
+#     under `$TMPDIR`.
+#
+#     THE `RuntimeError` GUARD DOES NOT MAKE THAT CONTAINER CASE WORK, it only
+#     stops this package's own patch from being the thing that breaks it.
+#     Upstream calls `Path.home()` unguarded at module scope in
+#     `src/observation/processors.py:16`
+#     (`_FASTER_WHISPER_DOWNLOAD_ROOT`), which is imported on the way to
+#     `src.cli`, so with no `$HOME` and no passwd entry even `openjet --version`
+#     still dies there. Measured. Not patched: it is upstream's bug, unrelated
+#     to the store redirect, and a second undocumented delta to re-check at
+#     every bump. Set `$HOME` if you run this in such a container.
+#
+#     Side effect of creating it in the accessor: any invocation creates the
+#     directory, including a pure `openjet --version`. It creates an empty
+#     directory and nothing else - no config file is written until something
+#     calls `save_config`. Making it lazy would mean patching every writer
+#     individually (`save_config`, the totals writer, the provisioner), which is
+#     more surface to re-verify at each bump than the empty directory is worth.
+#
+#     `src/setup.py`'s entry is redundant with `provisioning.MODELS_DIR`, which
+#     the same `roots` list already contains - it is patched anyway so that no
+#     `/nix/store` path survives in a list a user can see in `openjet setup`.
+#
+#     `substituteInPlace` on the *installed* files rather than a `.patch`: the
+#     source here is a wheel, so there is no unpacked tree for `patch` to apply
+#     to in `postPatch`.
+#
+#     Also removed: `load_config()`'s first candidate `Path("config.yaml")`,
+#     which read the config from the current working directory. That is worse
+#     than no fallback - it makes the tool's configuration depend on which
+#     directory it was started in.
+#
+#     Two further `openjet_install_root()` users were checked and are fine
+#     redirected: `src/llama_server.py` looks for a bundled
+#     `llama.cpp/build/bin` and `src/skills/discovery.py` for a bundled
+#     `skills/` directory. Neither exists in the wheel, so both were dead paths;
+#     after the redirect they point at the writable home, which is exactly where
+#     `src/provisioning.py` builds llama.cpp into. Two sites are *not* state and
+#     their store path is left in place: `src/workflows/daemon.py:233` computes
+#     the `sys.path` import root (see the next entry) and
+#     `src/context_index.py:175` probes for a `tests/` directory next to the
+#     code.
+#
+#   - THE WORKFLOW RUNNER NEEDS THE DEPENDENCY PATHS PASSED DOWN. Separate from
+#     the state problem and just as invisible from the build:
+#     `src/workflows/daemon.py:44-64` spawns the runner as
+#     `sys.executable -c "import sys; sys.path.insert(0, <install root>); from
+#     src.cli import main; main()"`. `buildPythonApplication` puts the
+#     dependencies on `sys.path` with a `site.addsitedir()` line inside
+#     `.openjet-wrapped` and never exports `PYTHONPATH`, so `sys.executable` is
+#     the bare interpreter and the child sees only openjet's own
+#     site-packages - it dies on `ModuleNotFoundError: No module named 'yaml'`
+#     while `openjet workflow start` exits 0 and `workflow status` still reports
+#     `state=idle` with a pid. Fixed by having `_runner_bootstrap()` prepend the
+#     parent's own `sys.path` to the child's.
+#
+#     Deliberately NOT fixed with `makeWrapperArgs = [ "--prefix PYTHONPATH …" ]`,
+#     which is the usual nixpkgs answer: this is a coding agent that runs
+#     arbitrary shell commands on the user's behalf, and an exported PYTHONPATH
+#     would leak this package's whole dependency closure into every one of them,
+#     shadowing the user's own Python environment.
+#
+#   - `openjet --update` IS A NO-OP THAT LIES. `src/self_update.py` runs `git`
+#     in its own parent directory and re-runs upstream's `install.sh`. In the
+#     store there is no git repository, so `_repo_tracking_target()` returns
+#     None, `available_update()` returns None, and the command prints
+#     "open-jet repo is already up to date." and exits 0 - it does not error
+#     out. Measured, not assumed. Updating this package means bumping it here.
+#     Left unpatched: the delta would be cosmetic and would have to be
+#     re-checked at every bump. But the message is misleading rather than merely
+#     useless, so know about it before trusting it on a host.
+#
+#   - EXTERNAL BINARIES ARE NOT WRAPPED IN. The tool shells out to `git`,
+#     `nvidia-smi`, `rocm-smi`, `vulkaninfo`, `llama-server`, `sudo`, `sysctl`,
+#     `ps` and friends. Every one is hardware probing, a privileged action, or
+#     an optional runtime the *user* provides: `nvidia-smi`/`rocm-smi` belong to
+#     the host's driver, and pinning a store `llama-server` would silently pick
+#     a build with the wrong acceleration. Upstream treats them all as optional.
+#     Do not add them to a `makeWrapper` PATH.
+#
+#   - TELEMETRY IS OPT-IN, so nothing is patched. `src/app.py:693-703`
+#     (`_effective_broadcast_config`) only enables the exporter when
+#     `telemetry.consent == "granted"` in the config, and the default config has
+#     no `telemetry` key, so broadcasting is off until a user answers the consent
+#     prompt (`src/app.py:746`, shown once on first TUI start; suppressible with
+#     `OPENJET_TELEMETRY_NO_PROMPT=1`). The endpoint
+#     (`https://telemetry.openjet.dev`, `src/config.py:14`) can be overridden
+#     with `OPENJET_TELEMETRY_ENDPOINT`. Duplicating upstream's own default in a
+#     patch would only rot.
+{
+  lib,
+  python3Packages,
+  versionCheckHook,
+}:
+
+python3Packages.buildPythonApplication (finalAttrs: {
+  pname = "openjet";
+  version = "0.4.31";
+  format = "wheel";
+
+  src = python3Packages.fetchPypi {
+    pname = "open_jet";
+    inherit (finalAttrs) version;
+    format = "wheel";
+    dist = "py3";
+    python = "py3";
+    hash = "sha256-lcYO129lFIJq80zmtda1mirn28nVORkFnhPJvGsLo/U=";
+  };
+
+  # See the header: pinned nixpkgs has OpenTelemetry 1.34.0, upstream asks for
+  # >=1.40. pythonImportsCheck below is what proves the relaxation holds.
+  pythonRelaxDeps = [
+    "opentelemetry-exporter-otlp-proto-http"
+    "opentelemetry-sdk"
+  ];
+
+  dependencies = with python3Packages; [
+    faster-whisper
+    hf-transfer
+    hf-xet
+    httpx
+    huggingface-hub
+    opentelemetry-exporter-otlp-proto-http
+    opentelemetry-sdk
+    prompt-toolkit
+    pyyaml
+    rich
+    tiktoken
+
+    # The `mcp` extra - a normal dependency here, see the header.
+    mcp
+  ];
+
+  # Redirect the install root at a writable per-user path. See the header for
+  # why this is substituteInPlace on the installed files and not a patch.
+  postInstall = ''
+    pushd $out/${python3Packages.python.sitePackages}
+
+    substituteInPlace src/app_paths.py \
+      --replace-fail 'from pathlib import Path' 'import os
+    import tempfile
+    from pathlib import Path
+
+
+    def _openjet_state_root() -> Path:
+        """Writable state root; the Nix store this code lives in is read-only."""
+        override = os.environ.get("OPENJET_HOME", "").strip()
+        if override:
+            root = Path(override).expanduser()
+        else:
+            xdg = os.environ.get("XDG_DATA_HOME", "").strip()
+            if xdg:
+                base = Path(xdg).expanduser()
+            else:
+                try:
+                    base = Path.home() / ".local" / "share"
+                except RuntimeError:
+                    # No $HOME and no passwd entry for this uid - e.g. a
+                    # container started with `--user 12345`. Path.home()
+                    # raises RuntimeError, not OSError, so it needs its own
+                    # guard: this function runs at import time (config.py),
+                    # so an escaping exception would break `openjet --version`.
+                    base = Path(tempfile.gettempdir()) / f"openjet-{os.getuid()}"
+            root = base / "openjet"
+        try:
+            root.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        return root' \
+      --replace-fail 'return Path(__file__).resolve().parent.parent' 'return _openjet_state_root()'
+
+    substituteInPlace src/config.py \
+      --replace-fail 'CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"' 'CONFIG_PATH = openjet_install_root() / "config.yaml"' \
+      --replace-fail 'for candidate in [Path("config.yaml"), CONFIG_PATH]:' 'for candidate in [CONFIG_PATH]:'
+
+    substituteInPlace src/app.py \
+      --replace-fail 'return Path(__file__).resolve().parent.parent / "totals.json"' 'from .app_paths import openjet_install_root
+
+            return openjet_install_root() / "totals.json"'
+
+    substituteInPlace src/setup.py \
+      --replace-fail 'Path(__file__).resolve().parent.parent / "models",' 'OPENJET_HOME / "models",'
+
+    substituteInPlace src/workflows/daemon.py \
+      --replace-fail 'f"sys.path.insert(0, {str(package_root)!r}); "' 'f"sys.path[:0] = {[p for p in sys.path if p]!r}; "
+            f"sys.path.insert(0, {str(package_root)!r}); "'
+
+    popd
+  '';
+
+  # src.session_logging is the module that imports the OpenTelemetry SDK and the
+  # OTLP-over-HTTP exporters at module level, so importing it here is what
+  # proves the relaxed constraint against 1.34.0. src.cli is the entry point and
+  # pulls in the rest of the tree; openjet/open_jet are the SDK shim packages.
+  pythonImportsCheck = [
+    "src.cli"
+    "src.session_logging"
+    "src.app_telemetry"
+    "src.observation.bridge"
+    "openjet"
+    "open_jet"
+  ];
+
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  versionCheckProgramArg = "--version";
+
+  meta = {
+    description = "Local AI coding agent: terminal UI and Python SDK for self-hosted OpenAI-compatible runtimes";
+    homepage = "https://openjet.dev/";
+    changelog = "https://github.com/L-Forster/open-jet/releases";
+    license = lib.licenses.agpl3Only;
+    mainProgram = "openjet";
+    platforms = lib.platforms.linux;
+    sourceProvenance = [ lib.sourceTypes.fromSource ];
+  };
+})

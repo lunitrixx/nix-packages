@@ -38,6 +38,25 @@
   build-only; the list and the reasoning are in `pkgs/smoke-tests.nix`.
   Note: `smoke-tinkerwell` requires `--option sandbox relaxed` (Electron
   does not survive the strict build sandbox).
+- **openjet:** Added v0.4.31. Local AI coding agent for OpenAI-compatible
+  local runtimes, as a CLI (`openjet` and `open-jet`). First Python package in
+  this set; built from the PyPI wheel because upstream's tags and its declared
+  version disagree and PyPI ships no sdist. The `mcp` extra is included, the
+  `cloud` extra (`keyring`, `litellm`, upstream's "Slipstream" feature) is
+  deliberately left out. Upstream writes its config, its downloaded models and
+  its token totals next to its own code, which under Nix is the read-only
+  store - the install root is redirected to `$OPENJET_HOME`, else
+  `$XDG_DATA_HOME/openjet`, else `~/.local/share/openjet`, and `load_config()`'s
+  fallback to `./config.yaml` in the current working directory is removed so the
+  configuration no longer depends on where the tool was started. The workflow
+  runner, which upstream spawns as a bare `sys.executable -c …`, now gets the
+  parent's `sys.path` passed down; without that `openjet workflow start` exited
+  0 while the runner died immediately on a missing `yaml`. Telemetry stays as
+  upstream ships it: opt-in, off until consent is granted. Upstream also
+  advertises a Python SDK; it is not exposed here (this is an application, not a
+  `python3Packages` entry), and `openjet --update` cannot work in the store -
+  it reports "already up to date" whatever the case, so updating means bumping
+  the package here.
 - **herdr:** Added v0.8.2. Terminal workspace manager for AI coding agents.
   Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
   Vendored from numtide/llm-agents.nix.
