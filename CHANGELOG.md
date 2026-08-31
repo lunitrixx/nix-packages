@@ -61,7 +61,7 @@
   just building them. Each `smoke-*` check runs the binary with a version
   command and requires the output to match a regex - exit status 0 alone
   does not pass, so a binary that prints its help instead of a version
-  still goes red. Covers claude-code, omp, pi, wails3, herdr, tinkerwell
+  still goes red. Covers claude-code, pi, wails3, tinkerwell
   (on a virtual display), the netbird CLIs, netbird-dashboard (artifact
   check) and all zabbix server/proxy/agent variants. GUI/VST packages stay
   build-only; the list and the reasoning are in `pkgs/smoke-tests.nix`.
@@ -95,4 +95,22 @@
   v1.5.5). This fixes a black screen on Wayland + Mesa 26. Added as
   `pkgs/by-name/vi/vital/package.nix` and auto-discovered by the by-name
   overlay.
+
+### Removed
+
+- **openjet:** Removed from the package set on the requester's preference.
+  The package was not found broken - it built, and its three smoke tests
+  passed. Its two consumers dropped it first (`lunitrixx/nix-config` #198,
+  `nix-platform` #117), so nothing references `pkgs.openjet` any more. Gone
+  with it: `pkgs/by-name/op/`, and the `smoke-openjet`,
+  `smoke-openjet-litellm` and `smoke-openjet-system-config` checks.
+- **omp:** Removed from the package set on the requester's preference. It was
+  used on two hosts in `lunitrixx/nix-config` and is not in nixpkgs, so this
+  removes it from those machines; the consumer dropped it first (#198). Gone
+  with it: `pkgs/by-name/om/` and the `smoke-omp` check.
+- **herdr:** Removed from the package set on the requester's preference. It
+  had no consumer left - its Home Manager module was dropped from
+  `lunitrixx/nix-config` earlier. Gone with it: `pkgs/by-name/he/` (including
+  the vendored `build.zig.zon.nix` and `hashes.json`) and the `smoke-herdr`
+  check.
 
