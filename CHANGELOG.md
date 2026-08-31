@@ -21,6 +21,15 @@
 
 ### Fixed
 
+- **smoke tests:** `smoke-tinkerwell` was flaky under build load - it failed
+  once with exit 139 during a parallel `nix flake check` and passed 7/7 when
+  run alone. It started `Xvfb :99` by hand and waited with `sleep 2`, so a
+  slow server start under load and a collision on the fixed display number
+  (`__noChroot` shares `/tmp/.X11-unix` with the host) could both decide the
+  result. It now uses `xvfb-run -a`, which waits until the server accepts
+  connections and picks a free display. The assertion is unchanged and the
+  exit status is still passed through, so a crashing binary still fails.
+
 - **pi-coding-agent:** `pi` crashed on startup with
   `ERR_MODULE_NOT_FOUND: @earendil-works/pi-telemetry`. Only three of the six
   workspace packages the CLI needs at runtime were vendored into the output;
