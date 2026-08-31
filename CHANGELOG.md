@@ -12,7 +12,7 @@
   checks against the 0.84.3 provider factories.
 - **omp:** Updated to v18.0.6. v18.0.7 exists as a tag but has no release
   assets, so 18.0.6 is the newest buildable release.
-- **claude-code:** Updated to v2.1.247.
+- **claude-code:** Updated to v2.1.251.
 - **wails3:** Updated to v3.0.0-beta.14.
 - **fontbase:** Updated to v2026.5.23.
 - **zabbix74:** Updated to v7.4.14.
