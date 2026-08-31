@@ -71,15 +71,29 @@
 #     `src/litellm_client.py`, `keyring` inside three functions in
 #     `src/api_auth.py` - so adding the extra changes nothing structurally; it
 #     only makes those functions succeed. Upstream asks for `keyring>=25` and
-#     `litellm>=1.74`; the pinned nixpkgs has 25.7.0 and 1.83.14, so unlike the
+#     `litellm>=1.74`; the pinned nixpkgs has 25.7.0 and 1.86.0, so unlike the
 #     OpenTelemetry entry above no constraint has to be relaxed.
 #
-#     Cost, measured: the closure goes from 1.13 GB to 1.26 GB. Nothing
+#     Cost, measured: the closure goes from 1.13 GB to 1.27 GB. Nothing
 #     alarming in it - no CUDA, no browser - mostly `openai`, `aiohttp`,
 #     `cryptography` (via keyring's SecretStorage backend) and their
 #     dependencies. One oddity worth knowing: nixpkgs' `python3Packages.openai`
 #     carries its voice helpers, so `sounddevice` and `portaudio` end up in the
 #     closure of a terminal tool that never plays audio.
+#
+#     Cosmetic, and not worth a dependency: litellm 1.86 warns twice on import
+#     that it cannot pre-load the Bedrock and SageMaker event-stream shapes
+#     because `botocore` is missing. Neither AWS runtime is reachable from
+#     openjet's config, and `botocore` is not in the wheel's METADATA - the
+#     warnings are noise on the way to the first chat, nothing more.
+#
+#     `smoke-openjet-litellm` in `pkgs/smoke-tests.nix` guards this. IT MATCHES
+#     ON TWO ERROR STRINGS ON PURPOSE, so a bump that changes upstream's or
+#     litellm's wording will fail it: it requires the litellm connection error
+#     and rejects `LiteLLM support is not installed`. A check that only imported
+#     the module would pass with the extra dropped again - the import is lazy -
+#     which is exactly the regression it exists to catch. If a bump reddens it,
+#     re-read the wording, do not weaken the assertion.
 #
 #     TWO MORE LAZY IMPORTS ARE NOT DECLARED BY UPSTREAM AT ALL, and are left
 #     out here too: `src/runtime_limits.py:81-84` imports `gguf` and
@@ -141,6 +155,60 @@
 #     which read the config from the current working directory. That is worse
 #     than no fallback - it makes the tool's configuration depend on which
 #     directory it was started in.
+#
+#   - A SYSTEM CONFIG LAYER IS READ UNDERNEATH THE USER'S FILE
+#     (`/etc/openjet/config.yaml`, overridable with `$OPENJET_SYSTEM_CONFIG` so
+#     a home-manager-only install can use it too). This exists so a host can
+#     *declare* its endpoint - both hosts that carry openjet run an
+#     OpenAI-compatible server on a fixed loopback address, and that address
+#     belongs in their NixOS configuration, not in whatever a person typed into
+#     `openjet setup`. It cannot be done any other way: after the redirect
+#     above there is exactly one config path, `save_config()` writes to it, so
+#     a store symlink would make saving fail and an activation script that
+#     overwrites the file would eat what `openjet setup` and `/model` wrote.
+#
+#     WATCH THE MERGE - `load_config()` WAS FIRST-MATCH-WINS. It looped over a
+#     candidate list and returned the first file that existed, so simply adding
+#     a second entry would make the system file *replace* the user's whole
+#     config (`setup_complete`, hardware profile, downloaded model paths,
+#     telemetry consent), which is the opposite of the point. The patched
+#     `load_config()` therefore merges, and the two halves of the file get
+#     different rules:
+#
+#       - `model_profiles` merges by profile `name`, and a system entry wins a
+#         name collision. Every system entry ends up in the result, so a
+#         host-declared profile cannot be lost and `/model <name>` always
+#         works. User-only profiles keep their place and their values.
+#       - every other key comes from the system only where the user file has no
+#         opinion at all (`key not in user`). So a fresh user gets the host's
+#         active selection - `active_model_profile` plus the top-level keys
+#         `apply_model_profile` copies out of a profile (`runtime`, `provider`,
+#         `model`, `base_url`, `context_window_tokens`) - and chat works out of
+#         the box, while a `/model` switch is written to the user's file and
+#         survives the next rebuild.
+#
+#     `save_config()` is untouched and still writes `CONFIG_PATH`, the user
+#     file, only - it is the single writer in the tree (`CONFIG_PATH` appears
+#     nowhere else in `src/`). The system file belongs to the NixOS generation
+#     and is never written. The one way to aim a write at it would be to point
+#     `$OPENJET_SYSTEM_CONFIG` at the user's own path; that is guarded by
+#     dropping the layer when the two resolve to the same file. An unreadable
+#     or non-mapping system file is ignored rather than fatal, because
+#     `load_config()` runs on every invocation.
+#
+#     The consequence of those two rules meeting, measured with
+#     `openjet --context 4096`: the user's top-level `context_window_tokens`
+#     becomes 4096 and stays there (`--status` shows 4096, and that is what
+#     `create_runtime_client` reads), while `--models` still lists the profile
+#     with the host's 32768, because the profile entry itself is the system's.
+#     Re-selecting that profile with `/model` re-applies the host's values.
+#     That is the rule working, not a leak: the host owns the profile, the user
+#     owns the current selection.
+#
+#     Note what a save materialises: once the user saves anything, the merged
+#     `model_profiles` (system entries included) land in their file. That is
+#     harmless - the system entry still wins the name on the next merge, so a
+#     host that changes its `base_url` still takes effect.
 #
 #     Two further `openjet_install_root()` users were checked and are fine
 #     redirected: `src/llama_server.py` looks for a bundled
@@ -288,8 +356,99 @@ python3Packages.buildPythonApplication (finalAttrs: {
       --replace-fail 'return Path(__file__).resolve().parent.parent' 'return _openjet_state_root()'
 
     substituteInPlace src/config.py \
-      --replace-fail 'CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"' 'CONFIG_PATH = openjet_install_root() / "config.yaml"' \
-      --replace-fail 'for candidate in [Path("config.yaml"), CONFIG_PATH]:' 'for candidate in [CONFIG_PATH]:'
+      --replace-fail 'CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"' 'CONFIG_PATH = openjet_install_root() / "config.yaml"
+
+    # System-level config layer, read underneath the writable user file. See
+    # the header for the merge semantics; save_config() never writes here.
+    OPENJET_SYSTEM_CONFIG_PATH = Path("/etc/openjet/config.yaml")
+
+
+    def _openjet_system_config_path() -> Path | None:
+        """Path of the system layer, or None when there is nothing to layer."""
+        override = os.environ.get("OPENJET_SYSTEM_CONFIG", "").strip()
+        path = Path(override).expanduser() if override else OPENJET_SYSTEM_CONFIG_PATH
+        try:
+            if path.resolve(strict=False) == CONFIG_PATH.resolve(strict=False):
+                # Pointed at the user own file - merging it with itself would
+                # only give the system half precedence over nothing.
+                return None
+        except OSError:
+            return None
+        return path
+
+
+    def _openjet_read_config(path: Path | None) -> dict:
+        """Read one config file; unreadable or non-mapping YAML is no layer."""
+        if path is None:
+            return {}
+        try:
+            if not path.exists():
+                return {}
+            raw = yaml.safe_load(path.read_text()) or {}
+        except (OSError, yaml.YAMLError):
+            return {}
+        return dict(raw) if isinstance(raw, dict) else {}
+
+
+    def _openjet_merge_model_profiles(system: object, user: object) -> list:
+        """Merge by profile name; a system entry wins a name collision.
+
+        A host-declared profile must be impossible to lose, so every system
+        entry ends up in the result - substituted in place where the user has
+        a profile of the same name, appended otherwise. User-only profiles
+        keep their order and their values.
+        """
+        by_name: dict = {}
+        for item in system if isinstance(system, list) else []:
+            if isinstance(item, dict):
+                name = str(item.get("name") or "").strip().lower()
+                if name:
+                    by_name[name] = item
+        merged: list = []
+        seen: set = set()
+        for item in user if isinstance(user, list) else []:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip().lower()
+            merged.append(by_name.get(name, item) if name else item)
+            if name:
+                seen.add(name)
+        for name, item in by_name.items():
+            if name not in seen:
+                merged.append(item)
+        return merged
+
+
+    def _openjet_merge_system_config(system: dict, user: dict) -> dict:
+        """Layer the system config underneath the user config."""
+        merged = dict(user)
+        for key, value in system.items():
+            if key == "model_profiles":
+                continue
+            # The system supplies a value only where the user file has no
+            # opinion - so a fresh user gets the host choice, and a /model
+            # switch survives the next rebuild.
+            if key not in merged:
+                merged[key] = value
+        profiles = _openjet_merge_model_profiles(
+            system.get("model_profiles"), user.get("model_profiles")
+        )
+        if profiles:
+            merged["model_profiles"] = profiles
+        return merged' \
+      --replace-fail '    for candidate in [Path("config.yaml"), CONFIG_PATH]:
+            if candidate.exists():
+                raw = yaml.safe_load(candidate.read_text()) or {}
+                return normalize_config(raw)
+        return {}' '    system_path = _openjet_system_config_path()
+        system_exists = system_path is not None and system_path.exists()
+        if not CONFIG_PATH.exists() and not system_exists:
+            return {}
+        return normalize_config(
+            _openjet_merge_system_config(
+                _openjet_read_config(system_path), _openjet_read_config(CONFIG_PATH)
+            )
+        )'
 
     substituteInPlace src/app.py \
       --replace-fail 'return Path(__file__).resolve().parent.parent / "totals.json"' 'from .app_paths import openjet_install_root
