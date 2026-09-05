@@ -7,19 +7,19 @@
   ripgrep,
 }:
 let
-  version = "0.84.4";
+  version = "0.85.0";
   src = fetchFromGitHub {
     owner = "earendil-works";
     repo = "pi";
     tag = "v${version}";
-    hash = "sha256-7z8OXao1PzmBEepDkIqVqyfQBPHulBlKcGymDYsnMvc=";
+    hash = "sha256-gznGlneVCx3htxRiJq0/futm4qLR9Bzfv3UwP3ES9v0=";
   };
 in
 buildNpmPackage {
   pname = "pi-coding-agent";
   inherit version src;
 
-  npmDepsHash = "sha256-35GC3Q4Jf4URvqoEYHeM63x49tTmrth62//PvKm4I7Q=";
+  npmDepsHash = "sha256-K/KiukwTHwu4HE8hUu7ur3bxggwfO0WL+QDI0FtxP3I=";
   npmWorkspace = "packages/coding-agent";
   npmRebuildFlags = [ "--ignore-scripts" ];
 
@@ -28,21 +28,25 @@ buildNpmPackage {
     shopt -s dotglob
     cp -r ${./models-data}/* packages/ai/src/providers/data/
     npx tsgo -p packages/telemetry/tsconfig.build.json
+    npx tsgo -p packages/chord/tsconfig.build.json
     npx tsgo -p packages/ai/tsconfig.build.json
     npx tsgo -p packages/tui/tsconfig.build.json
     npx tsgo -p packages/agent/tsconfig.build.json
     npx tsgo -p packages/protocol/tsconfig.build.json
+    npx tsgo -p packages/server/tsconfig.build.json
     npx tsgo -p packages/client/tsconfig.build.json
     npm run build --workspace=packages/coding-agent
   '';
 
   postInstall = ''
     local nm="$out/lib/node_modules/pi-monorepo/node_modules"
-    for ws in @earendil-works/pi-ai:packages/ai \
+    for ws in @earendil-works/chord:packages/chord \
+              @earendil-works/pi-ai:packages/ai \
               @earendil-works/pi-agent-core:packages/agent \
               @earendil-works/pi-tui:packages/tui \
               @earendil-works/pi-telemetry:packages/telemetry \
               @earendil-works/pi-protocol:packages/protocol \
+              @earendil-works/pi-server:packages/server \
               @earendil-works/pi-client:packages/client; do
       IFS=: read -r pkg src <<< "$ws"
       rm "$nm/$pkg"

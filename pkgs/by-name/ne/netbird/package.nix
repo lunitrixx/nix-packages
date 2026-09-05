@@ -29,13 +29,13 @@
   componentName ? "client",
 }:
 let
-  version = "0.77.1";
+  version = "0.78.1";
 
   src = fetchFromGitHub {
     owner = "netbirdio";
     repo = "netbird";
     tag = "v${version}";
-    hash = "sha256-uGyo2J/3berl6yBCs+Qy0mXKMZNRM8o6gclBeiDxon8=";
+    hash = "sha256-YWLorAu71hG5BJLXsZwtQf86o51KCn2/1wI1DRg/aCg=";
   };
 
   /*
@@ -99,11 +99,12 @@ buildGoModule (finalAttrs: {
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-IGCfMhcrZqHye83zcJuDf1Hyv7X4rKybxWOiyxGuYtY=";
+  vendorHash = "sha256-E8NeS88Ab5sumDxyH54y3GIWcXQQzRT0UXO+xwcQpUU=";
 
   nativeBuildInputs = [
     installShellFiles
-  ] ++ lib.optionals (componentName == "ui") [
+  ]
+  ++ lib.optionals (componentName == "ui") [
     nodejs
     pnpmConfigHook
     pnpm_11
@@ -154,14 +155,15 @@ buildGoModule (finalAttrs: {
     ''
       mv $out/bin/${builtBinaryName} $out/bin/${component.binaryName}
     ''
-    + lib.optionalString
-      (stdenv.buildPlatform.canExecute stdenv.hostPlatform && (component.hasCompletion or false))
-      ''
-        installShellCompletion --cmd ${component.binaryName} \
-          --bash <($out/bin/${component.binaryName} completion bash) \
-          --fish <($out/bin/${component.binaryName} completion fish) \
-          --zsh <($out/bin/${component.binaryName} completion zsh)
-      ''
+    +
+      lib.optionalString
+        (stdenv.buildPlatform.canExecute stdenv.hostPlatform && (component.hasCompletion or false))
+        ''
+          installShellCompletion --cmd ${component.binaryName} \
+            --bash <($out/bin/${component.binaryName} completion bash) \
+            --fish <($out/bin/${component.binaryName} completion fish) \
+            --zsh <($out/bin/${component.binaryName} completion zsh)
+        ''
     + lib.optionalString (stdenv.hostPlatform.isLinux && componentName == "ui") ''
       install -Dm644 $src/client/ui/build/linux/netbird.desktop $out/share/applications/netbird.desktop
 

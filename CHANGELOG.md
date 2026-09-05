@@ -4,6 +4,15 @@
 
 ### Changed
 
+- **netbird:** Updated to v0.78.1 (client and all six component overrides).
+- **netbird-dashboard:** Updated to v2.92.0.
+- **claude-code:** Updated to v2.1.261.
+- **ray:** Updated to v3.2.11.
+- **pi-coding-agent:** Updated to v0.85.0. Upstream added two new workspace
+  packages (`chord`, `pi-server`) that the coding-agent now depends on; both
+  are wired into the build. The vendored `models-data` snapshot was refreshed
+  from the published `@earendil-works/pi-ai` 0.85.0 npm package.
+- **deps:** nixpkgs base bumped to nixos-26.05 of 2026-09-03.
 - **netbird:** Updated to v0.77.1.
 - **pi-coding-agent:** Updated to v0.84.4. The vendored `models-data`
   snapshot was refreshed from the published `@earendil-works/pi-ai` package
