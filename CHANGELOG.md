@@ -4,7 +4,7 @@
 
 ### Changed
 
-- **netbird:** Updated to v0.78.1 (client and all seven component overrides).
+- **netbird:** Updated to v0.78.1 (client and all six component overrides).
 - **netbird-dashboard:** Updated to v2.92.0.
 - **claude-code:** Updated to v2.1.261.
 - **ray:** Updated to v3.2.11.
