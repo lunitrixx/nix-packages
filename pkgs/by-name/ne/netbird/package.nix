@@ -103,7 +103,8 @@ buildGoModule (finalAttrs: {
 
   nativeBuildInputs = [
     installShellFiles
-  ] ++ lib.optionals (componentName == "ui") [
+  ]
+  ++ lib.optionals (componentName == "ui") [
     nodejs
     pnpmConfigHook
     pnpm_11
@@ -154,14 +155,15 @@ buildGoModule (finalAttrs: {
     ''
       mv $out/bin/${builtBinaryName} $out/bin/${component.binaryName}
     ''
-    + lib.optionalString
-      (stdenv.buildPlatform.canExecute stdenv.hostPlatform && (component.hasCompletion or false))
-      ''
-        installShellCompletion --cmd ${component.binaryName} \
-          --bash <($out/bin/${component.binaryName} completion bash) \
-          --fish <($out/bin/${component.binaryName} completion fish) \
-          --zsh <($out/bin/${component.binaryName} completion zsh)
-      ''
+    +
+      lib.optionalString
+        (stdenv.buildPlatform.canExecute stdenv.hostPlatform && (component.hasCompletion or false))
+        ''
+          installShellCompletion --cmd ${component.binaryName} \
+            --bash <($out/bin/${component.binaryName} completion bash) \
+            --fish <($out/bin/${component.binaryName} completion fish) \
+            --zsh <($out/bin/${component.binaryName} completion zsh)
+        ''
     + lib.optionalString (stdenv.hostPlatform.isLinux && componentName == "ui") ''
       install -Dm644 $src/client/ui/build/linux/netbird.desktop $out/share/applications/netbird.desktop
 
