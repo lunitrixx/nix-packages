@@ -51,7 +51,18 @@ and the reverse proxy which isn't in nixpkgs).
 ## Layout
 
 ```
-flake.nix                            # overlays.default, legacyPackages, packages, checks, formatter
+flake.nix                            # inputs, mkFlake, the import-tree roots - nothing else
+modules/
+├── flake/                           # flake-level flake-parts modules, auto-imported by import-tree
+│   ├── systems.nix                  # target systems
+│   ├── overlays.nix                 # flake.overlays.default (the product)
+│   ├── legacy-packages.nix          # flake.legacyPackages (ours + nixpkgs fall-through)
+│   ├── packages.nix                 # perSystem.packages (our packages, attrsets flattened)
+│   ├── formatter.nix                # perSystem.formatter (nixfmt-rfc-style, estate-wide)
+│   ├── convention.nix               # perSystem.checks.module-name-uniqueness
+│   └── checks/
+│       ├── packages.nix             # perSystem.checks = packages
+│       └── smoke-tests.nix          # perSystem.checks.smoke-* (execute the CLI packages)
 pkgs/
 ├── by-name-overlay.nix              # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
 ├── by-name/ne/
@@ -79,6 +90,19 @@ Unfree and platform-restricted packages: the flake's own `packages`/`checks`
 build with `config.allowUnfree = true` (consumers set their own), and `packages`
 drops anything not `lib.meta.availableOn` the current system, so the
 `x86_64-linux`-only entries above don't break `aarch64-linux` checks.
+
+## Structure
+
+The flake follows the estate-wide flake-parts + import-tree convention:
+
+- `flake.nix` holds only the inputs, `mkFlake`, and the import-tree roots.
+  It never defines any output itself.
+- `modules/flake/` holds the flake-level flake-parts modules, auto-imported by
+  import-tree. One file per output; nesting under `modules/flake/` is free.
+- This repo has no class tree (no `modules/nixos/`, `modules/homeManager/`), so
+  its `flake.nix` has no `aspects` helper and no class imports.
+- `pkgs/by-name/**` is a plain nixpkgs-style package tree, not a module tree.
+  It is not touched by import-tree and is never written as a flake module.
 
 ## How it works
 

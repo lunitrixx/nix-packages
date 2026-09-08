@@ -4,6 +4,13 @@
 
 ### Changed
 
+- **flake:** Migrated to the estate-wide flake-parts + import-tree convention.
+  `flake.nix` now contains only inputs and `mkFlake` with import-tree; all
+  output definitions live under `modules/flake/`. The formatter is now
+  `nixfmt-rfc-style` (estate-wide). Added a `module-name-uniqueness` convention
+  check that fails the build if `.nix` files appear at the top level of
+  `modules/` outside the known roots.
+
 - **netbird:** Updated to v0.78.1 (client and all six component overrides).
 - **netbird-dashboard:** Updated to v2.92.0.
 - **claude-code:** Updated to v2.1.261.
