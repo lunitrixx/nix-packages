@@ -6,6 +6,7 @@
 
 - **claude-code:** Updated to v2.1.269.
 - **pi-coding-agent:** Updated to v0.85.1.
+- **wails3:** Updated to v3.0.0-beta.20 (tracks the Wails v3 beta line used by netbird-ui; four beta releases forward).
 - **flake:** Migrated to the estate-wide flake-parts + import-tree convention.
   `flake.nix` now contains only inputs and `mkFlake` with import-tree; all
   output definitions live under `modules/flake/`. The formatter is now
