@@ -4,6 +4,7 @@
 
 ### Changed
 
+- **claude-code:** Updated to v2.1.269.
 - **flake:** Migrated to the estate-wide flake-parts + import-tree convention.
   `flake.nix` now contains only inputs and `mkFlake` with import-tree; all
   output definitions live under `modules/flake/`. The formatter is now
