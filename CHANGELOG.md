@@ -4,6 +4,9 @@
 
 ### Changed
 
+- **deps:** All flake inputs moved forward. nixpkgs base bumped to nixos-26.05
+  of 2026-09-11 (`a5cc6f2` -> `21a67dc`); `flake-parts` and `import-tree` were
+  already current.
 - **claude-code:** Updated to v2.1.269.
 - **pi-coding-agent:** Updated to v0.85.1.
 - **wails3:** Updated to v3.0.0-beta.20 (tracks the Wails v3 beta line used by netbird-ui; four beta releases forward).
