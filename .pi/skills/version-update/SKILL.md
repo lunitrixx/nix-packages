@@ -43,10 +43,44 @@ For each **root** package, pick based on the source fields found:
 | If source has... | Check method |
 |------------------|--------------|
 | `owner` + `repo` (fetchFromGitHub) | `gh api repos/<owner>/<repo>/releases/latest --jq '.tag_name \| ltrimstr("v")'` |
-| `url` containing `AppImage` | `web_search({ query: "<pname> latest version" })` |
+| `url` containing `AppImage` | Read `version` from the electron-updater feed next to the AppImage - see *AppImage: the `latest-linux.yml` feed* below. `web_search` only as fallback. |
 | `url` containing `tar.gz` (e.g. zabbix CDN) | `web_search` or check the source download page |
 | `url` containing `storage.googleapis.com/claude-code` | Use `web_search` to find latest, or try `npm view @anthropic-ai/claude-code version` |
 | `override` or `callPackage ../xxx` (child) | skip - version comes from parent |
+
+### AppImage: the `latest-linux.yml` feed
+
+Every AppImage in this set is an Electron app packaged with electron-builder, and
+electron-builder publishes its auto-update feed `latest-linux.yml` **in the same
+directory as the AppImage itself**. Strip the file name off the pinned `url`,
+append `latest-linux.yml`, and read the `version` key:
+
+```bash
+curl -sSf "$(dirname "<pinned-url>")/latest-linux.yml" | grep -Po '^version:\s*\K\S+'
+```
+
+The feed also carries `path:` (the artefact file name, which must match the URL
+pattern the expression builds) and `sha512:` for that artefact - a second way to
+confirm the URL pattern still resolves to the published build.
+
+The three feeds in this package set, verified 2026-09-13 (HTTP 200, no account):
+
+| Package | Feed URL |
+|---|---|
+| `ray` | `https://ray-app.s3.eu-west-1.amazonaws.com/ray-app-updates-v3/stable/latest-linux.yml` |
+| `tinkerwell` | `https://download.tinkerwell.app/tinkerwell/latest-linux.yml` |
+| `fontbase` | `https://releases.fontba.se/linux/latest-linux.yml` |
+
+**A 403 on a bucket listing is not a reason to skip a package.** Listing is
+disabled on almost every S3 bucket by design, and a 404 on a guessed newer
+version URL only says that guess was wrong. Neither tells you anything about the
+latest version, and neither is needed: the feed is a single fixed URL and
+requires no listing. Only report `SKIPPED` after the feed URL itself has failed.
+
+Fall back to `web_search` only for an AppImage that genuinely has no such feed.
+
+`vital` is the one genuine `SKIPPED` here: its download sits behind an account
+login, so there is no unauthenticated feed to read.
 
 ## Step 3: Bump each package that has an update
 
@@ -118,12 +152,15 @@ Present a summary table of what was bumped:
 | netbird-dashboard| 2.39.0   | 2.39.0   | current |
 | zabbix74         | 7.4.11   | 7.4.12   | BUMPED  |
 | fontbase         | 2026.5.17| 2026.5.17| current |
-| ray              | 3.2.7    | ?        | SKIPPED |
+| ray              | 3.2.11   | 3.2.11   | current |
+| vital            | 1.6.4    | ?        | SKIPPED |
 ```
 
 - `BUMPED` = updated to newer version
 - `current` = already on latest
-- `SKIPPED` = could not determine latest version
+- `SKIPPED` = could not determine latest version. State the URL that was tried
+  and what it returned. `ray`, `tinkerwell` and `fontbase` are **not** skippable
+  - they have feeds (see Step 2).
 
 ## Edge cases
 
