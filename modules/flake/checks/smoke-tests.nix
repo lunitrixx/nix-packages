@@ -139,6 +139,81 @@ in
           package = pkgs.zabbix74.proxy-pgsql;
           test = runTest "zabbix74-proxy-pgsql" "${pkgs.zabbix74.proxy-pgsql}/bin/zabbix_proxy" "-V" "Zabbix";
         };
+        # The bouncer is a Lua module for OpenResty, not a binary - so "run it"
+        # means: render the snippet this package ships exactly as the consuming
+        # NixOS module will, start a real openresty on it and serve a request.
+        #
+        # init_by_lua does `require "crowdsec"`, which pulls in every plugin plus
+        # `resty.http`. That is what proves the opm dependency was resolved for
+        # real: a missing rock or a lua_package_path still pointing at the Debian
+        # layout fails here instead of at the edge in production. `openresty -t`
+        # is not enough - it parses the config but logs init_by_lua output to the
+        # old cycle's error log, so nothing is left to assert on.
+        #
+        # Both templates the package ships are rendered here, the config one
+        # included: config.lua rejects any key it does not know, so loading the
+        # real template is what catches an upstream key the package did not keep
+        # up with. The LAPI it is pointed at does not exist (nothing listens in
+        # a build sandbox), which is fine - in live mode the bouncer only calls
+        # out per request, and a refused call fails open, so the request still
+        # reaches the origin. Nothing here needs the network.
+        crowdsec-openresty-bouncer = {
+          package = pkgs.crowdsec-openresty-bouncer;
+          test =
+            pkgs.runCommand "smoke-crowdsec-openresty-bouncer"
+              {
+                preferLocalBuild = true;
+                nativeBuildInputs = [
+                  pkgs.openresty
+                  pkgs.curl
+                ];
+              }
+              ''
+                mkdir -p $out $PWD/prefix/conf $PWD/prefix/logs
+                share=${pkgs.crowdsec-openresty-bouncer}/share/crowdsec-openresty-bouncer
+
+                substitute $share/crowdsec-openresty-bouncer.conf.template prefix/conf/bouncer.conf \
+                  --replace-fail '${"\${CROWDSEC_LAPI_URL}"}' http://127.0.0.1:18098 \
+                  --replace-fail '${"\${API_KEY}"}' smoke-test-key
+
+                substitute $share/crowdsec_openresty.conf.template prefix/conf/crowdsec.conf \
+                  --replace-fail '${"\${SSL_CERTS_PATH}"}' ${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt \
+                  --replace-fail '${"\${BOUNCER_CONFIG_PATH}"}' $PWD/prefix/conf/bouncer.conf
+
+                cat > prefix/conf/nginx.conf <<EOF
+                pid $PWD/prefix/logs/nginx.pid;
+                error_log $PWD/prefix/logs/error.log info;
+                events { worker_connections 16; }
+                http {
+                  access_log $PWD/prefix/logs/access.log;
+                  include $PWD/prefix/conf/crowdsec.conf;
+                  server {
+                    listen 127.0.0.1:18099;
+                    location / { content_by_lua_block { ngx.say("origin ok") } }
+                  }
+                }
+                EOF
+
+                openresty -p $PWD/prefix -c $PWD/prefix/conf/nginx.conf
+                for _ in $(seq 1 50); do
+                  [ -s prefix/logs/nginx.pid ] && break
+                  sleep 0.2
+                done
+
+                curl -sS --fail http://127.0.0.1:18099/ > $out/body
+                openresty -p $PWD/prefix -c $PWD/prefix/conf/nginx.conf -s stop
+
+                cp prefix/logs/error.log $out/log
+                grep -q "origin ok" $out/body
+                grep -E -- "\[Crowdsec\] Initialisation done" $out/log
+                # config.lua logs this for any key it does not recognise.
+                if grep -q "unsupported configuration" $out/log; then
+                  echo "the shipped config template has a key this bouncer rejects" >&2
+                  exit 1
+                fi
+                echo "smoke-crowdsec-openresty-bouncer: openresty loaded the Lua module and served a request"
+              '';
+        };
         claude-code = {
           package = pkgs.claude-code;
           test =
