@@ -79,6 +79,9 @@ pkgs/
 │   ├── versions.nix                 # the single version + hash pin (v74)
 │   ├── server.nix agent.nix agent2.nix web.nix proxy.nix  # vendored verbatim from nixpkgs
 │   └── …                            # `pkgs.zabbix74.{server-pgsql,web,agent2,…}`
+├── by-name/cr/crowdsec-openresty-bouncer/package.nix  # Lua remediation component
+│                                    #   for OpenResty (not in nixpkgs); ships Lua +
+│                                    #   config templates, no binary
 ├── by-name/cl/claude-code/package.nix   # prebuilt binary in buildFHSEnv (unfree, x86_64-linux)
 ├── by-name/pi/pi-coding-agent/package.nix  # buildNpmPackage from earendil-works/pi
 ├── by-name/ra/ray/package.nix       # AppImage, Spatie debug app (unfree, x86_64-linux)

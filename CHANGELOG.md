@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Added
+
+- **crowdsec-openresty-bouncer:** New package at v1.2.2 - CrowdSec's Lua
+  remediation component for OpenResty, which nixpkgs does not ship. It is the
+  piece that makes CrowdSec's AppSec component a WAF: AppSec only returns a
+  verdict on a copy of a request, the bouncer is what forwards the request and
+  enforces. Upstream's `openresty-opm` dependency (a network fetch at install
+  time) is replaced by a real input - `luajitPackages.lua-resty-http`, the only
+  rock its install script fetches - and the shared `lua-cs-bouncer` library
+  comes pre-assembled in the release tarball instead of being git-cloned during
+  the build. The package ships the Lua and the two config templates; the
+  consuming NixOS module renders them. Paths are documented in the header
+  comment of `pkgs/by-name/cr/crowdsec-openresty-bouncer/package.nix`.
+  A smoke test starts a real OpenResty on the shipped snippet and serves a
+  request through the bouncer.
+
 ### Changed
 
 - **deps:** All flake inputs moved forward. nixpkgs base bumped to nixos-26.05
