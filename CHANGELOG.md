@@ -4,6 +4,20 @@
 
 ### Added
 
+- **audiogridder-plugin:** New package at v1.2.0 - AudioGridder VST2/VST3 audio
+  routing plugins (x86-64 Linux only). Ships as a Makeself self-extracting
+  installer; the package extracts it with `--noexec` (never runs the bundled
+  sudo-based install script) and installs the plugins via `autoPatchelfHook`
+  for use by a host DAW. Licensed MIT per the upstream source repo
+  (`github.com/apohl79/audiogridder`). `crashpad_handler` is intentionally
+  excluded: it requires `libssl.so.1.1` / `libcrypto.so.1.1` (OpenSSL 1.1, EOL)
+  and is a crash reporter only, with nothing else depending on it. Runtime deps
+  patched: freetype, curl, libX11, libXtst, and the GCC C++ runtime
+  (libstdc++ / libgcc_s); alsa-lib and libjack2 are appended to RUNPATH for
+  dlopen'd audio libraries. The plugin is not loadable in a DAW from this
+  package alone - that requires a working AudioGridder server and is outside
+  the scope of this change.
+
 - **crowdsec-openresty-bouncer:** New package at v1.2.2 - CrowdSec's Lua
   remediation component for OpenResty, which nixpkgs does not ship. It is the
   piece that makes CrowdSec's AppSec component a WAF: AppSec only returns a
