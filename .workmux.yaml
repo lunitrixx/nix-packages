@@ -2,7 +2,7 @@
 #
 # One task, one worktree, one window.
 #
-# `workmux add feat/whatever -l pi` branches off main, lays out a single agent
+# `workmux add feat/whatever -l qwen` branches off main, lays out a single agent
 # and starts it with the task already in it. Agents do not share a checkout,
 # which matters here because a package set is evaluated as a whole: the by-name
 # overlay reads *every* pkgs/by-name/<shard>/<name>/package.nix, so two agents
@@ -29,12 +29,14 @@ base_branch: main
 # removes that prerequisite; `workmux dashboard` is how you look at them.
 mode: session
 
-# A built-in, not one of the named profiles from ~/.config/workmux/config.yaml.
+# A named profile, not a built-in. The fleet went qwen-only on 2026-09-25: the
+# operator's global ~/.config/workmux/config.yaml now defines exactly one agent
+# profile, coder-qwen, and the tiers that sat on top of it are retired.
 #
-# `agents` is global-only, so `coder-pi` means nothing on a machine that has not
-# defined it - and this file is committed. The model tier is chosen per task via
-# the layouts below.
-agent: claude
+# This default and the single layout below both point at that one profile, so a
+# `workmux add` that names no layout still lands on the surviving tier instead
+# of a profile that no longer exists.
+agent: coder-qwen
 
 #-------------------------------------------------------------------------------
 # Panes
@@ -56,27 +58,21 @@ panes:
 # Named layouts
 #-------------------------------------------------------------------------------
 
-# The two model tiers. The names are the contract with the orchestrator's
-# projects.yaml, which dispatches with `-l pi` or `-l claude`.
+# The one surviving layout. Its name is the contract with the orchestrator's
+# projects.yaml, which dispatches every layout with `-l qwen`.
 #
-#   workmux add feat/x -l pi       DeepSeek V4 Pro through pi, for a version bump
-#                                  or one vendored package.nix
-#   workmux add feat/y -l claude   the expensive one, for the overlay, the flake's
-#                                  own outputs, or anything every consumer sees
+#   workmux add feat/x -l qwen    the fleet's only tier, for everything: a
+#                                  version bump or one vendored package.nix as
+#                                  much as the overlay or the flake's own outputs
 #
-# The profiles themselves (coder-pi, coder-claude) live in the global config,
-# because which model you drive and with whose credentials is a property of the
-# machine, not of this repository.
+# The profile coder-qwen lives in the global config, because which model you
+# drive and with whose credentials is a property of the machine, not of this
+# repository. It is the only agent profile defined there as of 2026-09-25, when
+# the fleet went qwen-only and the retired Claude tiers were deleted.
 layouts:
-  pi:
+  qwen:
     panes:
-      - command: <agent:coder-pi>
-        name: agent
-        focus: true
-
-  claude:
-    panes:
-      - command: <agent:coder-claude>
+      - command: <agent:coder-qwen>
         name: agent
         focus: true
 
