@@ -34,6 +34,7 @@
 
 ### Changed
 
+- **netbird:** Updated to v0.79.0 (client and all six component overrides).
 - **wails3:** Updated to v3.0.0-beta.26 (tracks the Wails v3 beta line used by netbird-ui; six beta releases forward).
 - **crowdsec-openresty-bouncer:** Updated to v1.2.3.
 - **tinkerwell:** Updated to v5.17.4.
