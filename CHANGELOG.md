@@ -34,6 +34,7 @@
 
 ### Changed
 
+- **tinkerwell:** Updated to v5.17.4.
 - **ray:** Updated to v3.2.12.
 - **fontbase:** Updated to v2026.6.0.
 - **claude-code:** Updated to v2.1.283.
