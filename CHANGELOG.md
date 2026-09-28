@@ -34,6 +34,7 @@
 
 ### Changed
 
+- **ray:** Updated to v3.2.12.
 - **fontbase:** Updated to v2026.6.0.
 - **claude-code:** Updated to v2.1.283.
 - **deps:** All flake inputs moved forward. nixpkgs base bumped to nixos-26.05
