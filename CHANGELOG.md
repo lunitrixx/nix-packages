@@ -34,6 +34,7 @@
 
 ### Changed
 
+- **fontbase:** Updated to v2026.6.0.
 - **claude-code:** Updated to v2.1.283.
 - **deps:** All flake inputs moved forward. nixpkgs base bumped to nixos-26.05
   of 2026-09-11 (`a5cc6f2` -> `21a67dc`); `flake-parts` and `import-tree` were
