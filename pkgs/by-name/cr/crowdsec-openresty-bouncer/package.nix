@@ -98,14 +98,14 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "crowdsec-openresty-bouncer";
-  version = "1.2.2";
+  version = "1.2.3";
 
   # The release asset, not the git tag: upstream's git tree carries no Lua at
   # all (the Makefile clones lua-cs-bouncer into it), while the published
   # tarball is the assembled tree the .deb is built from.
   src = fetchurl {
     url = "https://github.com/crowdsecurity/cs-openresty-bouncer/releases/download/v${finalAttrs.version}/crowdsec-openresty-bouncer.tgz";
-    hash = "sha256-sR9UyclGMH31ozE9ucDjkJA2MNIvsnGrYqBRoJbfQbg=";
+    hash = "sha256-Kj3O6xZrP6u0UMHJpczZYNFJP1qlJnepvivjbWAUoL8=";
   };
 
   dontConfigure = true;

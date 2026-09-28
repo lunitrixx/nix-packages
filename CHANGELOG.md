@@ -34,6 +34,19 @@
 
 ### Changed
 
+- **zabbix74:** Updated to v7.4.15.
+- **pi-coding-agent:** Updated to v0.87.1. Upstream added two new provider
+  data files (`meta.json`, `radius.json`) that the coding-agent now imports;
+  the vendored `models-data` snapshot was refreshed from the published
+  `@earendil-works/pi-ai` 0.87.1 npm package so the build's type check passes.
+- **netbird-dashboard:** Updated to v2.94.0.
+- **netbird:** Updated to v0.79.0 (client and all six component overrides).
+- **wails3:** Updated to v3.0.0-beta.26 (tracks the Wails v3 beta line used by netbird-ui; six beta releases forward).
+- **crowdsec-openresty-bouncer:** Updated to v1.2.3.
+- **tinkerwell:** Updated to v5.17.4.
+- **ray:** Updated to v3.2.12.
+- **fontbase:** Updated to v2026.6.0.
+- **claude-code:** Updated to v2.1.283.
 - **deps:** All flake inputs moved forward. nixpkgs base bumped to nixos-26.05
   of 2026-09-11 (`a5cc6f2` -> `21a67dc`); `flake-parts` and `import-tree` were
   already current.
