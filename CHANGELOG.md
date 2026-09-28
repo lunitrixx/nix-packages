@@ -34,6 +34,7 @@
 
 ### Changed
 
+- **zabbix74:** Updated to v7.4.15.
 - **pi-coding-agent:** Updated to v0.87.1. Upstream added two new provider
   data files (`meta.json`, `radius.json`) that the coding-agent now imports;
   the vendored `models-data` snapshot was refreshed from the published
