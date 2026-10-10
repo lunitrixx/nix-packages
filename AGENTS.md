@@ -86,6 +86,8 @@ pkgs/
 ├── by-name/pi/pi-coding-agent/package.nix  # buildNpmPackage from earendil-works/pi
 ├── by-name/ra/ray/package.nix       # AppImage, Spatie debug app (unfree, x86_64-linux)
 ├── by-name/ti/tinkerwell/package.nix    # AppImage, PHP tinker tool (unfree, x86_64-linux)
+├── by-name/ta/tabby-terminal/package.nix  # .deb, Tabby terminal (x86_64-linux); not
+│                                    #   `tabby`, which is TabbyML in nixpkgs
 └── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
 ```
 

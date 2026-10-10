@@ -4,6 +4,14 @@
 
 ### Added
 
+- **tabby-terminal:** New package at v1.0.238 - the Tabby terminal, SSH and
+  serial client (x86-64 Linux only), moved here from `lunitrixx/nix-config`.
+  The attribute is `tabby-terminal` because nixpkgs' `tabby` is TabbyML, which
+  the overlay must not shadow; the binary is still `tabby`. Built from the
+  upstream .deb, not the AppImage: `appimageTools` runs the app in bubblewrap,
+  whose `no_new_privs` makes `sudo` refuse to run in every Tabby shell. A smoke
+  test starts it on a virtual display and checks the printed version.
+
 - **audiogridder-plugin:** New package at v1.2.0 - AudioGridder VST2/VST3 audio
   routing plugins (x86-64 Linux only). Ships as a Makeself self-extracting
   installer; the package extracts it with `--noexec` (never runs the bundled

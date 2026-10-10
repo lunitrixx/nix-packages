@@ -255,6 +255,27 @@ in
                 echo "smoke-tinkerwell: tinkerwell ran and matched tinkerwell"
               '';
         };
+        # Electron as well, so the same virtual display as tinkerwell. The
+        # version is printed by the app's own JS, which only runs once every
+        # native library has loaded.
+        tabby-terminal = {
+          package = pkgs.tabby-terminal;
+          test =
+            pkgs.runCommand "smoke-tabby-terminal"
+              {
+                preferLocalBuild = true;
+                nativeBuildInputs = [ pkgs.xvfb-run ];
+              }
+              ''
+                mkdir -p $out
+                export HOME=$TMPDIR/home
+                mkdir -p $HOME
+                xvfb-run -a --server-args="-screen 0 1024x768x24" \
+                  ${pkgs.tabby-terminal}/bin/tabby --version > $out/log 2>&1
+                grep -E -- "^[0-9]+\.[0-9]+\.[0-9]+$" $out/log
+                echo "smoke-tabby-terminal: tabby ran and printed its version"
+              '';
+        };
       };
     in
     {
