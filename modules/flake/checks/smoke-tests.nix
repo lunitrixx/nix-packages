@@ -255,6 +255,38 @@ in
                 echo "smoke-tinkerwell: tinkerwell ran and matched tinkerwell"
               '';
         };
+        # Electron as well, so the same virtual display as tinkerwell. The
+        # version is printed by the app's own JS, which only runs once every
+        # native library has loaded.
+        tabby-terminal = {
+          package = pkgs.tabby-terminal;
+          test =
+            pkgs.runCommand "smoke-tabby-terminal"
+              {
+                preferLocalBuild = true;
+                nativeBuildInputs = [ pkgs.xvfb-run ];
+              }
+              ''
+                mkdir -p $out
+                export HOME=$TMPDIR/home
+                mkdir -p $HOME
+                xvfb-run -a --server-args="-screen 0 1024x768x24" \
+                  ${pkgs.tabby-terminal}/bin/tabby --version > $out/log 2>&1
+                grep -E -- "^[0-9]+\.[0-9]+\.[0-9]+$" $out/log
+
+                # --version exits before the GPU process starts, so run the app
+                # briefly as well: ANGLE dlopens libglvnd only at that point
+                # (libEGL.so.1 on Wayland, libGL.so.1 on X11 as here). There is
+                # no GPU driver in the sandbox, so other GL errors are expected;
+                # a library that cannot be opened is the packaging bug.
+                timeout 8 xvfb-run -a --server-args="-screen 0 1024x768x24" \
+                  ${pkgs.tabby-terminal}/bin/tabby --user-data-dir=$TMPDIR/ud > $out/run.log 2>&1 || true
+                if grep "cannot open shared object file" $out/run.log >&2; then
+                  exit 1
+                fi
+                echo "smoke-tabby-terminal: tabby ran, printed its version and loaded libglvnd"
+              '';
+        };
       };
     in
     {

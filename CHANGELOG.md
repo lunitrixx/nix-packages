@@ -4,6 +4,17 @@
 
 ### Added
 
+- **tabby-terminal:** New package at v1.0.238 - the Tabby terminal, SSH and
+  serial client (x86-64 Linux only), moved here from `lunitrixx/nix-config`.
+  The attribute is `tabby-terminal` because nixpkgs' `tabby` is TabbyML, which
+  the overlay must not shadow; the binary is still `tabby`. Built from the
+  upstream .deb, not the AppImage: `appimageTools` runs the app in bubblewrap,
+  whose `no_new_privs` makes `sudo` refuse to run in every Tabby shell. libglvnd
+  is appended to the RUNPATH of the bundled ANGLE libraries, which dlopen
+  `libEGL.so.1`/`libGL.so.1`; without it the GPU process exited at every start
+  and Tabby rendered in software. A smoke test starts it on a virtual display,
+  checks the printed version and fails on any library that cannot be opened.
+
 - **audiogridder-plugin:** New package at v1.2.0 - AudioGridder VST2/VST3 audio
   routing plugins (x86-64 Linux only). Ships as a Makeself self-extracting
   installer; the package extracts it with `--noexec` (never runs the bundled
@@ -34,6 +45,10 @@
 
 ### Changed
 
+- **fontbase, ray, tinkerwell:** Extract the AppImage with
+  `appimageTools.extract` instead of the deprecated `extractType2`, which
+  printed a deprecation warning on every switch of a consumer on a newer
+  nixpkgs. The built packages are unchanged (identical store paths).
 - **zabbix74:** Updated to v7.4.15.
 - **pi-coding-agent:** Updated to v0.87.1. Upstream added two new provider
   data files (`meta.json`, `radius.json`) that the coding-agent now imports;

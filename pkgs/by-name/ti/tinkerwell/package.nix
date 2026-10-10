@@ -9,7 +9,7 @@ let
     url = "https://download.tinkerwell.app/tinkerwell/Tinkerwell-${version}.AppImage";
     hash = "sha256-E3/PO0tczIJDjX/sXtlqbXtiv6G2l6I8LaKf75Iuy1Q=";
   };
-  appimageContents = appimageTools.extractType2 {
+  appimageContents = appimageTools.extract {
     pname = "tinkerwell";
     inherit version src;
   };
