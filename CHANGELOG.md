@@ -42,6 +42,10 @@
 
 ### Changed
 
+- **fontbase, ray, tinkerwell:** Extract the AppImage with
+  `appimageTools.extract` instead of the deprecated `extractType2`, which
+  printed a deprecation warning on every switch of a consumer on a newer
+  nixpkgs. The built packages are unchanged (identical store paths).
 - **zabbix74:** Updated to v7.4.15.
 - **pi-coding-agent:** Updated to v0.87.1. Upstream added two new provider
   data files (`meta.json`, `radius.json`) that the coding-agent now imports;

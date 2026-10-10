@@ -9,7 +9,7 @@ let
     url = "https://releases.fontba.se/linux/FontBase-${version}.AppImage";
     hash = "sha256-EuzTnT79tNv0tEjoHOuK5I7Myrk0u21dXPwvGJ9exm0=";
   };
-  appimageContents = appimageTools.extractType2 {
+  appimageContents = appimageTools.extract {
     pname = "fontbase";
     inherit version src;
   };

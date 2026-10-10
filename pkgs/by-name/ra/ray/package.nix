@@ -9,7 +9,7 @@ let
     url = "https://ray-app.s3.eu-west-1.amazonaws.com/ray-app-updates-v3/stable/ray-${version}-latest-linux-x86_64.AppImage";
     hash = "sha256-VpzOFyfQatV8iZVjryDW08qwxJpcCW5cD0IiHeLwiuA=";
   };
-  appimageContents = appimageTools.extractType2 {
+  appimageContents = appimageTools.extract {
     pname = "ray";
     inherit version src;
   };
