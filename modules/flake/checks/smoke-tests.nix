@@ -273,7 +273,18 @@ in
                 xvfb-run -a --server-args="-screen 0 1024x768x24" \
                   ${pkgs.tabby-terminal}/bin/tabby --version > $out/log 2>&1
                 grep -E -- "^[0-9]+\.[0-9]+\.[0-9]+$" $out/log
-                echo "smoke-tabby-terminal: tabby ran and printed its version"
+
+                # --version exits before the GPU process starts, so run the app
+                # briefly as well: ANGLE dlopens libglvnd only at that point
+                # (libEGL.so.1 on Wayland, libGL.so.1 on X11 as here). There is
+                # no GPU driver in the sandbox, so other GL errors are expected;
+                # a library that cannot be opened is the packaging bug.
+                timeout 8 xvfb-run -a --server-args="-screen 0 1024x768x24" \
+                  ${pkgs.tabby-terminal}/bin/tabby --user-data-dir=$TMPDIR/ud > $out/run.log 2>&1 || true
+                if grep "cannot open shared object file" $out/run.log >&2; then
+                  exit 1
+                fi
+                echo "smoke-tabby-terminal: tabby ran, printed its version and loaded libglvnd"
               '';
         };
       };

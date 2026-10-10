@@ -9,8 +9,11 @@
   The attribute is `tabby-terminal` because nixpkgs' `tabby` is TabbyML, which
   the overlay must not shadow; the binary is still `tabby`. Built from the
   upstream .deb, not the AppImage: `appimageTools` runs the app in bubblewrap,
-  whose `no_new_privs` makes `sudo` refuse to run in every Tabby shell. A smoke
-  test starts it on a virtual display and checks the printed version.
+  whose `no_new_privs` makes `sudo` refuse to run in every Tabby shell. libglvnd
+  is appended to the RUNPATH of the bundled ANGLE libraries, which dlopen
+  `libEGL.so.1`/`libGL.so.1`; without it the GPU process exited at every start
+  and Tabby rendered in software. A smoke test starts it on a virtual display,
+  checks the printed version and fails on any library that cannot be opened.
 
 - **audiogridder-plugin:** New package at v1.2.0 - AudioGridder VST2/VST3 audio
   routing plugins (x86-64 Linux only). Ships as a Makeself self-extracting

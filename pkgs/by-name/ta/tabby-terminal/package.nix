@@ -21,6 +21,7 @@
   gtk3,
   libdrm,
   libgbm,
+  libGL,
   libsecret,
   libxkbcommon,
   nspr,
@@ -78,6 +79,11 @@ stdenv.mkDerivation rec {
   ];
 
   runtimeDependencies = [ (lib.getLib udev) ];
+
+  # ANGLE's bundled libEGL.so dlopens libEGL.so.1; without it the GPU process
+  # exits and Tabby renders in software. runtimeDependencies only reach
+  # executables, appendRunpaths reaches the libraries too.
+  appendRunpaths = [ "${lib.getLib libGL}/lib" ];
 
   dontBuild = true;
   dontConfigure = true;
