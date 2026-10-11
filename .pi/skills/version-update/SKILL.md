@@ -79,9 +79,6 @@ requires no listing. Only report `SKIPPED` after the feed URL itself has failed.
 
 Fall back to `web_search` only for an AppImage that genuinely has no such feed.
 
-`vital` is the one genuine `SKIPPED` here: its download sits behind an account
-login, so there is no unauthenticated feed to read.
-
 ## Step 3: Bump each package that has an update
 
 For each package where `latest > current`, bump version and hash. The method depends on the source type.
@@ -153,7 +150,6 @@ Present a summary table of what was bumped:
 | zabbix74         | 7.4.11   | 7.4.12   | BUMPED  |
 | fontbase         | 2026.5.17| 2026.5.17| current |
 | ray              | 3.2.11   | 3.2.11   | current |
-| vital            | 1.6.4    | ?        | SKIPPED |
 ```
 
 - `BUMPED` = updated to newer version
