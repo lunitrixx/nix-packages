@@ -140,6 +140,12 @@
   workspace packages the CLI needs at runtime were vendored into the output;
   `pi-telemetry`, `pi-protocol` and `pi-client` are now copied as well.
 
+### Removed
+
+- **audiogridder-plugin, toneboosters-archive, vital:** Removed from the
+  package set. `vital` also exists in nixpkgs, so `pkgs.vital` now resolves
+  to nixpkgs' version again.
+
 ### Added
 
 - **smoke tests:** `nix flake check` now executes the CLI packages, not

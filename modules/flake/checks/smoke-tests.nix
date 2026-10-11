@@ -12,8 +12,7 @@
 # Packages without a meaningful headless entry point are deliberately absent
 # here - they are still built by the `packages` attrset that `checks`
 # includes:
-#   - netbird-ui, fontbase, ray, vital        (GUI apps, no display in a build)
-#   - toneboosters-archive                    (VST/VST3 plugins)
+#   - netbird-ui, fontbase, ray               (GUI apps, no display in a build)
 #   - netbird-relay, netbird-upload           (no --version flag; need a
 #                                              configured environment to run)
 #   - zabbix74-web                            (PHP frontend, needs a web server)
