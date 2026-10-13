@@ -4,8 +4,8 @@
 #   nix build  nix-packages#hello         (from nixpkgs)
 #
 # allowUnfree is set so this repo's own build targets (legacyPackages/
-# packages/checks) can build unfree packages like claude-code/ray/
-# tinkerwell/fontbase. The exposed overlays.default is unaffected -
+# packages/checks) can build unfree packages like ray/tinkerwell/
+# fontbase. The exposed overlays.default is unaffected -
 # consumers set their own allowUnfree.
 {
   inputs,
