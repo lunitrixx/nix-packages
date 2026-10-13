@@ -200,7 +200,7 @@ post_create:
 #    every time. That is correct and not to be fixed with `--all-systems`:
 #    aarch64 would have to be emulated or sent to a remote builder, and the flake
 #    already filters per-system availability so the x86_64-only packages
-#    (claude-code, ray, tinkerwell, fontbase) are not the reason.
+#    (ray, tinkerwell, fontbase) are not the reason.
 #
 # THE TRAP THIS LIST CANNOT CATCH: nix reads a git flake through git, so an
 # untracked `package.nix` is invisible to both commands. A new package that was

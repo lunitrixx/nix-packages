@@ -56,10 +56,6 @@ in
       # <name> -> { package = <the drv it tests>; test = <the smoke drv> }
       # `package` drives the availability filter, `test` is what gets built.
       tests = {
-        pi-coding-agent = {
-          package = pkgs.pi-coding-agent;
-          test = runTest "pi" "${pkgs.pi-coding-agent}/bin/pi" "--version" "^[0-9]+\\.[0-9]+\\.[0-9]+";
-        };
         wails3 = {
           package = pkgs.wails3;
           test = runTest "wails3" "${pkgs.wails3}/bin/wails3" "version" "v[0-9]+\\.[0-9]+\\.[0-9]+";
@@ -212,12 +208,6 @@ in
                 fi
                 echo "smoke-crowdsec-openresty-bouncer: openresty loaded the Lua module and served a request"
               '';
-        };
-        claude-code = {
-          package = pkgs.claude-code;
-          test =
-            runTest "claude-code" "${pkgs.claude-code}/bin/claude" "--version"
-              "^[0-9]+\\.[0-9]+\\.[0-9]+";
         };
         # Tinkerwell is an Electron app: it refuses to start without an X
         # server and it does not survive the strict build sandbox, so this test

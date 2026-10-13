@@ -142,6 +142,11 @@
 
 ### Removed
 
+- **claude-code, pi-coding-agent:** Removed from the package set. Both now
+  come from `numtide/llm-agents.nix` in `lunitrixx/nix-config`, so the copies
+  here were redundant and fell behind upstream. Both also exist in nixpkgs, so
+  `pkgs.claude-code` and `pkgs.pi-coding-agent` resolve to nixpkgs' versions
+  again through the overlay.
 - **audiogridder-plugin, toneboosters-archive, vital:** Removed from the
   package set. `vital` also exists in nixpkgs, so `pkgs.vital` now resolves
   to nixpkgs' version again.

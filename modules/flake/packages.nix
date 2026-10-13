@@ -31,7 +31,7 @@ in
           overlay;
 
       # Drop anything not available on this system's platform, so that
-      # x86_64-linux-only packages (claude-code/ray/tinkerwell/fontbase)
+      # x86_64-linux-only packages (ray/tinkerwell/fontbase)
       # don't break aarch64 checks.
       flatten =
         name: v:

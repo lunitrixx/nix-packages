@@ -45,7 +45,6 @@ For each **root** package, pick based on the source fields found:
 | `owner` + `repo` (fetchFromGitHub) | `gh api repos/<owner>/<repo>/releases/latest --jq '.tag_name \| ltrimstr("v")'` |
 | `url` containing `AppImage` | Read `version` from the electron-updater feed next to the AppImage - see *AppImage: the `latest-linux.yml` feed* below. `web_search` only as fallback. |
 | `url` containing `tar.gz` (e.g. zabbix CDN) | `web_search` or check the source download page |
-| `url` containing `storage.googleapis.com/claude-code` | Use `web_search` to find latest, or try `npm view @anthropic-ai/claude-code version` |
 | `override` or `callPackage ../xxx` (child) | skip - version comes from parent |
 
 ### AppImage: the `latest-linux.yml` feed
@@ -118,7 +117,7 @@ HASH=$(nix store prefetch-file "<new-url>")
 # 3. Update version and hash in package.nix
 ```
 
-### Prebuilt binary from URL (claude-code, etc.)
+### Prebuilt binary from URL
 
 ```bash
 # 1. Construct the new URL by replacing the version in the old URL
