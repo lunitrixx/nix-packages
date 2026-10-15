@@ -12,7 +12,7 @@
 # `workmux config reference` prints every option with its documentation.
 
 # The default branch, read rather than guessed: `origin/HEAD` points at `main`,
-# and `.pi/rules/workflow.md` forbids committing to it directly at all - a
+# and `.claude/rules/workflow.md` forbids committing to it directly at all - a
 # pre-commit guard in `.git/hooks` enforces that, and worktrees share it.
 #
 # Named rather than `auto`. `auto` is a resolution chain (`main_branch`,
@@ -82,27 +82,26 @@ layouts:
 
 files:
   # Per-checkout agent state, copied so a worktree starts with the same tool
-  # permissions instead of prompting on its first command. All three are
-  # gitignored (see `.gitignore`, which names the two settings.local.json files
-  # explicitly) and all three are personal - an agent that revokes a permission
-  # in its worktree must not change the main checkout's.
+  # permissions instead of prompting on its first command. Both are gitignored
+  # (see `.gitignore`, which names `.claude/settings.local.json` explicitly) and
+  # both are personal - an agent that revokes a permission in its worktree must
+  # not change the main checkout's.
   #
-  # None of the three exists in this checkout today. That is deliberate rather
+  # Neither exists in this checkout today. That is deliberate rather
   # than sloppy: every entry is run through the glob crate, so a pattern with no
   # match is silently skipped, and listing them now means they are picked up the
   # day they appear. `.env` is listed for the same reason - `.env.example` is
   # committed and documents the file, though nothing in this repository reads one
   # yet.
   #
-  # Not listed, and deliberately: `.mcp.json`, `.pi/settings.json` and the
-  # `.claude/{rules,skills}` symlinks are all tracked, so a worktree gets them
+  # Not listed, and deliberately: `.mcp.json` and `.claude/{rules,skills}` are
+  # all tracked, so a worktree gets them
   # from git. Copying a tracked file over its own checked-out copy is at best a
   # no-op and at worst a way to smuggle uncommitted local edits into every
   # worktree.
   copy:
     - .env
     - .claude/settings.local.json
-    - .pi/settings.local.json
 
   # Nothing. This is a finding, not an omission.
   #
@@ -123,8 +122,8 @@ files:
   #                   them would let one worktree's `nix build` re-point the main
   #                   checkout's root. They are removed instead, in pre_remove.
   #   .claude/skills, .claude/rules
-  #                 - FORBIDDEN. They are *tracked* symlinks into `.pi/`
-  #                   (`git ls-files .claude` lists both, mode 120000). Symlinking
+  #                 - FORBIDDEN. They are *tracked* directories
+  #                   (`git ls-files .claude` lists their files). Symlinking
   #                   a path that contains tracked files hides them from git,
   #                   every worktree then reports them deleted, and an agent
   #                   staging broadly deletes them from the repository. That cost
@@ -165,7 +164,7 @@ post_create:
 # THE ODDITY FIRST, because it explains the shape of this list: this repository
 # has no CI pipeline. `.github/` holds issue templates and a PR template and no
 # workflows at all. So there is nothing to mirror, and the authority is instead
-# `AGENTS.md` under Conventions - "Run the formatter before finalizing changes:
+# `CLAUDE.md` under Conventions - "Run the formatter before finalizing changes:
 # nix fmt" and "Every change must pass the checks. nix flake check builds every
 # package we define". That is what is reproduced here, in that order.
 #
