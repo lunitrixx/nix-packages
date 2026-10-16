@@ -1,5 +1,6 @@
 # Agent personal / machine-specific config (never commit)
 .claude/settings.local.json
+.pi/settings.local.json
 
 # Nix build output
 result
