@@ -2,12 +2,6 @@
 
 ## Unreleased
 
-### Changed
-
-- Agent configuration moved from pi to Claude Code: `AGENTS.md` is now
-  `CLAUDE.md`, rules live in `.claude/rules/`, skills in `.claude/skills/`,
-  and `.pi/` is gone.
-
 ### Added
 
 - **tabby-terminal:** New package at v1.0.238 - the Tabby terminal, SSH and
