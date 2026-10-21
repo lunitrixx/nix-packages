@@ -276,6 +276,36 @@ in
                 echo "smoke-tabby-terminal: tabby ran, printed its version and loaded libglvnd"
               '';
         };
+        php85 = {
+          package = pkgs.php85;
+          test = runTest "php85" "${pkgs.php85}/bin/php" "-v" "^PHP 8\\.5\\.12 \\(cli\\)";
+        };
+        php85-modules = {
+          package = pkgs.php85;
+          test =
+            pkgs.runCommand "smoke-php85-modules"
+              {
+                preferLocalBuild = true;
+              }
+              ''
+                mkdir -p $out
+                ${pkgs.php85}/bin/php -m > $out/log
+                for ext in Core curl mbstring openssl pdo_pgsql zlib; do
+                  grep -qx "$ext" $out/log
+                done
+                echo "smoke-php85-modules: php -m lists the default extensions"
+              '';
+        };
+        # An extension through withExtensions, the path consumers use to add
+        # modules, so it proves that wiring still builds and loads.
+        php85-apcu =
+          let
+            php = pkgs.php85.withExtensions ({ all, ... }: [ all.apcu ]);
+          in
+          {
+            package = php;
+            test = runTest "php85-apcu" "${php}/bin/php" "-m" "^apcu$";
+          };
       };
     in
     {

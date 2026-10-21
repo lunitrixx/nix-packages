@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-21
+
+### Added
+
+- **php85:** New package at PHP 8.5.12, the 2026-10-21 security release, pinned
+  ahead of nixpkgs' 8.5.10. It fixes CVE-2026-109618 (GHSA-w8hw-w9fx-j79w, RCE
+  via out-of-memory corruption) and CVE-2026-109619 (GHSA-6wmf-4rv5-p3rp, RCE via
+  stale global state), both CVSS 9.2. Built by nixpkgs' `generic.nix` with our
+  version, hash and an empty `patches` list, so an upstream fix is one line. The
+  bz2 tarball matches the sha256 in php.net's release feed and carries a valid
+  signature from the PHP release manager key
+  D95C 03BC 702B E951 5344 AE33 74E4 4BC9 0677 01A5. The filter OOM tests run
+  php-cgi, which needs filter.so loaded; the package adds it in the test
+  harness. Smoke tests check `php -v`, the default modules and an apcu build
+  through `withExtensions`.
+
 ## Unreleased
 
 ### Added
