@@ -95,6 +95,34 @@ nix fmt
 
 One netbird bump updates the client and every server component at once.
 
+## PHP 8.5
+
+`php85` (`pkgs/by-name/ph/php85/package.nix`) is pinned ahead of the channel at
+8.5.12. It calls nixpkgs' `generic.nix` with our version, hash and `patches`,
+so `php85.withExtensions` and the `php85Packages` set work as in nixpkgs.
+
+Add an upstream security fix as one entry in `patches`:
+
+```nix
+patches = [
+  (fetchpatch {
+    url = "https://github.com/php/php-src/commit/<sha>.patch";
+    hash = lib.fakeHash; # build once, then copy the `got:` hash from the error
+  })
+];
+```
+
+`lib.fakeHash` needs `lib` in the argument list of `package.nix`. Copy the
+`got:` hash from the mismatch error into `hash`.
+
+Take the next release by setting `version` and `hash`. The hash is the SRI
+`sha256` of `https://www.php.net/distributions/php-<version>.tar.bz2` (nixpkgs'
+`generic.nix` fetches the bz2, not the xz), which `nix store prefetch-file --json
+<url>` prints. It must match the `sha256` in the release feed
+`https://www.php.net/releases/index.php?json&version=8.5`.
+Then update the version in the `php85` smoke test in
+`modules/flake/checks/smoke-tests.nix`.
+
 ## License
 
 The package descriptions (Nix expressions) are [MIT](./LICENSE). This does not
