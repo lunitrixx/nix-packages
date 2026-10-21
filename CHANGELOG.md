@@ -16,6 +16,14 @@
   harness. Smoke tests check `php -v`, the default modules and an apcu build
   through `withExtensions`.
 
+### Fixed
+
+- **php85:** Build on nixos-unstable too. nixpkgs-unstable removed the
+  `withJitSealloc` argument from pcre2 on 2026-08-07, so the unconditional
+  override made every consumer on unstable fail with "called with unexpected
+  argument 'withJitSealloc'". The override now applies only where pcre2 still
+  accepts the argument, so the nixos-26.05 build is unchanged.
+
 ## Unreleased
 
 ### Added
