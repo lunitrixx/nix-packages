@@ -12,6 +12,7 @@
 {
   callPackage,
   fetchpatch,
+  lib,
   stdenv,
   llvmPackages,
   pcre2,
@@ -25,9 +26,14 @@ let
 
   base = callPackage (path + "/pkgs/development/interpreters/php/generic.nix") {
     stdenv = if stdenv.cc.isClang then llvmPackages.stdenv else stdenv;
-    pcre2 = pcre2.override {
-      withJitSealloc = false; # See https://bugs.php.net/bug.php?id=78927 and https://bugs.php.net/bug.php?id=78630
-    };
+    # nixos-unstable removed withJitSealloc from pcre2 (2026-08-07), so the override is conditional.
+    pcre2 =
+      if lib.functionArgs pcre2.override ? withJitSealloc then
+        pcre2.override {
+          withJitSealloc = false; # See https://bugs.php.net/bug.php?id=78927 and https://bugs.php.net/bug.php?id=78630
+        }
+      else
+        pcre2;
     inherit version hash;
     extraPatches = patches;
     # make test loads the shared filter.so into the CLI only, but the filter OOM
