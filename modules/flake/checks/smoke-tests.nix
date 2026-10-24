@@ -276,6 +276,71 @@ in
                 echo "smoke-tabby-terminal: tabby ran, printed its version and loaded libglvnd"
               '';
         };
+        # No real Windows ISO in a build, so the fixture mirrors its layout: a
+        # UDF image whose UEFI El Torito entry points at efisys.bin, with
+        # efisys_noprompt.bin beside it. The script must repoint the entry at
+        # the noprompt image and add ei.cfg, and --noprompt-only must patch the
+        # extent in place without touching the BIOS entry.
+        win-iso-remaster = {
+          package = pkgs.win-iso-remaster;
+          test =
+            pkgs.runCommand "smoke-win-iso-remaster"
+              {
+                preferLocalBuild = true;
+                nativeBuildInputs = [
+                  pkgs.cdrkit
+                  pkgs.p7zip
+                  pkgs.xorriso
+                  pkgs.win-iso-remaster
+                ];
+              }
+              ''
+                mkdir -p $out fixture/boot fixture/efi/microsoft/boot fixture/sources
+                head -c 4096 /dev/urandom > fixture/boot/etfsboot.com
+                head -c 1024 /dev/urandom > fixture/boot/bootfix.bin
+                head -c 1474560 /dev/urandom > fixture/efi/microsoft/boot/efisys.bin
+                head -c 1474560 /dev/urandom > fixture/efi/microsoft/boot/efisys_noprompt.bin
+                head -c 65536 /dev/urandom > fixture/sources/install.wim
+                (
+                  cd fixture
+                  genisoimage -quiet -o ../source.iso \
+                    -b boot/etfsboot.com -no-emul-boot -boot-load-size 8 -c boot.catalog \
+                    -iso-level 4 -J -l -D -N -joliet-long -relaxed-filenames \
+                    -V TESTVOL -udf -allow-limited-size \
+                    -eltorito-alt-boot -efi-boot efi/microsoft/boot/efisys.bin -no-emul-boot \
+                    .
+                )
+
+                win-iso-remaster --help > $out/help.log
+                grep -q -- "--noprompt-only" $out/help.log
+
+                if win-iso-remaster --noprompt-only --pid AAAAA source.iso 2> $out/reject.log; then
+                  echo "--pid with --noprompt-only must be refused" >&2
+                  exit 1
+                fi
+
+                win-iso-remaster -o rebuilt.iso source.iso > $out/rebuild.log
+                xorriso -indev rebuilt.iso -report_el_torito plain 2>/dev/null \
+                  | grep -c 'El Torito boot img' | grep -qx 2
+                lba=$(xorriso -indev rebuilt.iso -report_el_torito plain 2>/dev/null \
+                  | awk '$7 == "UEFI" { print $NF }')
+                dd if=rebuilt.iso bs=2048 skip="$lba" count=720 status=none \
+                  | cmp - fixture/efi/microsoft/boot/efisys_noprompt.bin
+                7z x -y -otest -- rebuilt.iso sources/ei.cfg > /dev/null
+                grep -qx Professional test/sources/ei.cfg
+
+                win-iso-remaster --noprompt-only -o patched.iso source.iso > $out/patch.log
+                lba=$(xorriso -indev patched.iso -report_el_torito plain 2>/dev/null \
+                  | awk '$7 == "UEFI" { print $NF }')
+                dd if=patched.iso bs=2048 skip="$lba" count=720 status=none \
+                  | cmp - fixture/efi/microsoft/boot/efisys_noprompt.bin
+                bios=$(xorriso -indev source.iso -report_el_torito plain 2>/dev/null \
+                  | awk '$7 == "BIOS" { print $NF }')
+                cmp <(dd if=patched.iso bs=2048 skip="$bios" count=2 status=none) \
+                  <(dd if=source.iso bs=2048 skip="$bios" count=2 status=none)
+                echo "smoke-win-iso-remaster: rebuild and in-place patch both repoint UEFI to efisys_noprompt.bin"
+              '';
+        };
         php85 = {
           package = pkgs.php85;
           test = runTest "php85" "${pkgs.php85}/bin/php" "-v" "^PHP 8\\.5\\.12 \\(cli\\)";
