@@ -123,6 +123,24 @@ Take the next release by setting `version` and `hash`. The hash is the SRI
 Then update the version in the `php85` smoke test in
 `modules/flake/checks/smoke-tests.nix`.
 
+## Windows 11 ISO remaster
+
+`win-iso-remaster` (`pkgs/by-name/wi/win-iso-remaster`) writes a copy of a
+Windows 11 ISO that boots UEFI without the "Press any key to boot from CD or
+DVD" prompt and installs Pro without an edition list (`sources/ei.cfg`). The
+source ISO is never modified; the output lands next to it as
+`*_pro_noprompt.iso`.
+
+```sh
+win-iso-remaster Windows11.iso                    # rebuild with ei.cfg
+win-iso-remaster --noprompt-only Windows11.iso    # patch only the UEFI boot image
+```
+
+The rebuild follows the dockur/windows recipe and writes UDF, which the 8 GB
+`install.wim` needs. It needs free space of twice the ISO size. `--pid KEY`
+writes `sources/PID.txt`; `--no-bios-prompt` removes `boot/bootfix.bin`, which
+is not verified on hardware.
+
 ## License
 
 The package descriptions (Nix expressions) are [MIT](./LICENSE). This does not

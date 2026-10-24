@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-24
+
+### Added
+
+- **win-iso-remaster:** New package. Rebuilds a Windows 11 ISO with genisoimage
+  (UDF, Joliet, the dockur/windows recipe) so the UEFI entry points at
+  `efisys_noprompt.bin` and the install goes to Pro through `sources/ei.cfg`.
+  `--noprompt-only` patches the UEFI boot image in place after comparing its
+  extent byte for byte. The source ISO is never modified. A fixture ISO
+  exercises both modes in `smoke-win-iso-remaster`.
+
 ## 2026-10-21
 
 ### Added
