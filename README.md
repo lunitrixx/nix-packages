@@ -136,8 +136,8 @@ Take the next release by setting `version` and `hash`. The hash is the SRI
 `generic.nix` fetches the bz2, not the xz), which `nix store prefetch-file --json
 <url>` prints. It must match the `sha256` in the release feed
 `https://www.php.net/releases/index.php?json&version=8.5`.
-Then update the version in the `php85` smoke test in
-`modules/flake/checks/smoke-tests.nix`.
+The `smoke-php85` assertion derives the version from the package, so the
+smoke test needs no change.
 
 ## Windows 11 ISO remaster
 

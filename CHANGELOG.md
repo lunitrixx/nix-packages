@@ -18,6 +18,9 @@
   `allowUnfree`) moved to `modules/flake/_base.nix`, shared by `packages.nix`,
   `legacy-packages.nix` and `checks/smoke-tests.nix` instead of being defined
   in each of them. Output names are unchanged.
+- **checks:** the `smoke-php85` assertion now derives the version from
+  `pkgs.php85.version` instead of hard-coding it, so a version bump cannot
+  silently desynchronise the test (and no longer needs the manual README step).
 
 ### Fixed
 

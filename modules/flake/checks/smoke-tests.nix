@@ -330,9 +330,13 @@
                 echo "smoke-win-iso-remaster: rebuild and in-place patch both repoint UEFI to efisys_noprompt.bin"
               '';
         };
+        # The version comes from the package, not from a literal, so bumping
+        # php85 cannot leave this assertion stale.
         php85 = {
           package = pkgs.php85;
-          test = runTest "php85" "${pkgs.php85}/bin/php" "-v" "^PHP 8\\.5\\.12 \\(cli\\)";
+          test = runTest "php85" "${pkgs.php85}/bin/php" "-v" (
+            "^PHP ${lib.replaceStrings [ "." ] [ "\\." ] pkgs.php85.version} \\(cli\\)"
+          );
         };
         php85-modules = {
           package = pkgs.php85;
