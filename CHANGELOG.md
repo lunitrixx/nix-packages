@@ -14,6 +14,10 @@
   mention license validation.
 - **wails3:** `meta.description` no longer says "v3 beta" - the package is on
   the stable 3.0.0.
+- **flake:** the base package set (locked nixpkgs + our overlay +
+  `allowUnfree`) moved to `modules/flake/_base.nix`, shared by `packages.nix`,
+  `legacy-packages.nix` and `checks/smoke-tests.nix` instead of being defined
+  in each of them. Output names are unchanged.
 
 ## 2026-10-24
 

@@ -21,20 +21,11 @@
   lib,
   ...
 }:
-let
-  byNameDir = ../../../pkgs/by-name;
-  overlay = import ../../../pkgs/by-name-overlay.nix byNameDir;
-in
 {
   perSystem =
     { system, ... }:
     let
-      pkgs =
-        (import inputs.nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        }).extend
-          overlay;
+      pkgs = import ../_base.nix { inherit inputs system; };
 
       # runTest <name> <bin> <args> <grep-regex>
       # Runs the binary, captures the output, and requires the regex to match -

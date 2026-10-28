@@ -56,6 +56,8 @@ modules/
 ├── flake/                           # flake-level flake-parts modules, auto-imported by import-tree
 │   ├── systems.nix                  # target systems
 │   ├── overlays.nix                 # flake.overlays.default (the product)
+│   ├── _base.nix                    # base-set helper (nixpkgs + overlay + allowUnfree);
+│   │                                #   skipped by import-tree, used by the outputs below
 │   ├── legacy-packages.nix          # flake.legacyPackages (ours + nixpkgs fall-through)
 │   ├── packages.nix                 # perSystem.packages (our packages, attrsets flattened)
 │   ├── formatter.nix                # perSystem.formatter (nixfmt-rfc-style, estate-wide)
