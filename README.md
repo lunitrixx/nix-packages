@@ -46,6 +46,22 @@ anything we don't define stays as nixpkgs provides it.
 | `netbird-upload` | `netbird-upload` | debug-bundle upload-server |
 | `netbird-dashboard` | static SPA | web console |
 
+## Packages
+
+Everything this overlay defines today; anything else stays nixpkgs' (see
+`pkgs/by-name/`, auto-discovered - a new `package.nix` is a new package):
+
+| Package | What it is |
+|---------|------------|
+| `netbird`, `netbird-management`, … (8) | NetBird VPN, one source tree, version-matched - see the table above |
+| `zabbix74` | Zabbix 7.4, an attrset of derivations (`.server-pgsql`, `.web`, `.agent2`, …); version and hash pinned in `versions.nix` |
+| `crowdsec-openresty-bouncer` | CrowdSec's Lua remediation component for OpenResty (not in nixpkgs); ships Lua + config templates, no binary |
+| `php85` | PHP 8.5 pinned ahead of the channel, built with nixpkgs' `generic.nix` (see below) |
+| `wails3` | Wails v3 CLI, a Go module netbird-ui builds against (not in nixos-26.05) |
+| `win-iso-remaster` | Tool that remasters a Windows 11 ISO (see below) |
+| `ray`, `tinkerwell`, `fontbase` | Unfree AppImage desktop apps (x86_64-linux) |
+| `tabby-terminal` | Tabby terminal, built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs |
+
 ## Usage
 
 Add it as a flake input and apply the overlay:

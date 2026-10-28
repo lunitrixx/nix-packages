@@ -84,10 +84,14 @@ pkgs/
 ├── by-name/cr/crowdsec-openresty-bouncer/package.nix  # Lua remediation component
 │                                    #   for OpenResty (not in nixpkgs); ships Lua +
 │                                    #   config templates, no binary
+├── by-name/ph/php85/package.nix     # PHP 8.5 pinned ahead of the channel; built with
+│                                   #   nixpkgs' generic.nix (our version/hash/patches)
 ├── by-name/ra/ray/package.nix       # AppImage, Spatie debug app (unfree, x86_64-linux)
 ├── by-name/ti/tinkerwell/package.nix    # AppImage, PHP tinker tool (unfree, x86_64-linux)
 ├── by-name/ta/tabby-terminal/package.nix  # .deb, Tabby terminal (x86_64-linux); not
 │                                    #   `tabby`, which is TabbyML in nixpkgs
+├── by-name/wa/wails3/package.nix    # Go module netbird-ui builds against (not in nixos-26.05)
+├── by-name/wi/win-iso-remaster/package.nix  # Windows 11 ISO remaster tool (not in nixpkgs)
 └── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
 ```
 
