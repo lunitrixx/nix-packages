@@ -4,10 +4,10 @@
   appimageTools,
 }:
 let
-  version = "3.2.12";
+  version = "3.2.15";
   src = fetchurl {
     url = "https://ray-app.s3.eu-west-1.amazonaws.com/ray-app-updates-v3/stable/ray-${version}-latest-linux-x86_64.AppImage";
-    hash = "sha256-VpzOFyfQatV8iZVjryDW08qwxJpcCW5cD0IiHeLwiuA=";
+    hash = "sha256-IALq0cMM4la+noe96bShCxikMZFXd4ehRn+5YhFXqNM=";
   };
   appimageContents = appimageTools.extract {
     pname = "ray";
