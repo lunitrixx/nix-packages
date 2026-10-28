@@ -19,6 +19,15 @@
   `legacy-packages.nix` and `checks/smoke-tests.nix` instead of being defined
   in each of them. Output names are unchanged.
 
+### Fixed
+
+- **checks:** `smoke-tinkerwell` now builds under the default sandbox, so
+  plain `nix flake check` passes again. It dropped `__noChroot` (which Nix 2.34
+  refuses unless the global sandbox mode is `relaxed`, which had made the
+  pre_merge gate fail on main) and runs the Electron app with `--no-sandbox`
+  instead, since Electron's own Chromium sandbox needs setuid privileges the
+  build sandbox does not grant; the Nix sandbox itself stays on.
+
 ## 2026-10-24
 
 ### Added
