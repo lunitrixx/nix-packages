@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-28
+
+### Changed
+
+- **netbird:** Bump to 0.81.5. The child components (client, management, signal,
+  relay, proxy, ui, upload) follow through the parent.
+- **netbird-dashboard:** Bump to 2.96.0.
+- **wails3:** Bump from 3.0.0-beta.26 to the stable 3.0.0. netbird-ui builds with it.
+- **zabbix74:** Bump to 7.4.16.
+- **fontbase:** Bump to 2026.7.0.
+- **ray:** Bump to 3.2.15. The release notes for 3.2.12 through 3.2.15 do not
+  mention license validation.
+
 ## 2026-10-24
 
 ### Added

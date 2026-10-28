@@ -8,7 +8,7 @@
 #     zabbix-<version>.tar.gz sha256.
 generic: {
   v74 = generic {
-    version = "7.4.15";
-    hash = "sha256-Xh2bN0fr+bgdXWLYzgDvmz9/TAgTlK0Rot0YiXok85Q=";
+    version = "7.4.16";
+    hash = "sha256-Diw5HcGErM6ONCUOcyalHhnIvO4x5nuEl/VSYkfs0mE=";
   };
 }
