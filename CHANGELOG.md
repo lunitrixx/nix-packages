@@ -12,6 +12,8 @@
 - **fontbase:** Bump to 2026.7.0.
 - **ray:** Bump to 3.2.15. The release notes for 3.2.12 through 3.2.15 do not
   mention license validation.
+- **wails3:** `meta.description` no longer says "v3 beta" - the package is on
+  the stable 3.0.0.
 
 ## 2026-10-24
 
