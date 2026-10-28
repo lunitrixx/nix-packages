@@ -3,26 +3,20 @@
 #   nix build  nix-packages#netbird       (ours)
 #   nix build  nix-packages#hello         (from nixpkgs)
 #
-# allowUnfree is set so this repo's own build targets (legacyPackages/
-# packages/checks) can build unfree packages like ray/tinkerwell/
-# fontbase. The exposed overlays.default is unaffected -
-# consumers set their own allowUnfree.
+# The base set (nixpkgs + overlay + allowUnfree) comes from _base.nix, shared
+# with packages.nix and checks/smoke-tests.nix.
 {
   inputs,
   lib,
   config,
   ...
 }:
-let
-  overlay = import ../../pkgs/by-name-overlay.nix ../../pkgs/by-name;
-in
 {
   flake.legacyPackages = lib.genAttrs config.systems (
     system:
-    (import inputs.nixpkgs {
+    import ./_base.nix {
+      inherit inputs;
       inherit system;
-      config.allowUnfree = true;
-    }).extend
-      overlay
+    }
   );
 }

@@ -12,6 +12,24 @@
 - **fontbase:** Bump to 2026.7.0.
 - **ray:** Bump to 3.2.15. The release notes for 3.2.12 through 3.2.15 do not
   mention license validation.
+- **wails3:** `meta.description` no longer says "v3 beta" - the package is on
+  the stable 3.0.0.
+- **flake:** the base package set (locked nixpkgs + our overlay +
+  `allowUnfree`) moved to `modules/flake/_base.nix`, shared by `packages.nix`,
+  `legacy-packages.nix` and `checks/smoke-tests.nix` instead of being defined
+  in each of them. Output names are unchanged.
+- **checks:** the `smoke-php85` assertion now derives the version from
+  `pkgs.php85.version` instead of hard-coding it, so a version bump cannot
+  silently desynchronise the test (and no longer needs the manual README step).
+
+### Fixed
+
+- **checks:** `smoke-tinkerwell` now builds under the default sandbox, so
+  plain `nix flake check` passes again. It dropped `__noChroot` (which Nix 2.34
+  refuses unless the global sandbox mode is `relaxed`, which had made the
+  pre_merge gate fail on main) and runs the Electron app with `--no-sandbox`
+  instead, since Electron's own Chromium sandbox needs setuid privileges the
+  build sandbox does not grant; the Nix sandbox itself stays on.
 
 ## 2026-10-24
 

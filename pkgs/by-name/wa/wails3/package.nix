@@ -42,7 +42,7 @@ buildGoModule (finalAttrs: {
   depsTargetTargetPropagated = [ webkitgtk_6_0 ];
 
   meta = {
-    description = "Build desktop applications using Go & Web Technologies, v3 beta";
+    description = "Build desktop applications using Go & Web Technologies";
     homepage = "https://wails.io";
     license = lib.licenses.mit;
     mainProgram = "wails3";

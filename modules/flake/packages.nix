@@ -12,7 +12,6 @@
 }:
 let
   byNameDir = ../../pkgs/by-name;
-  overlay = import ../../pkgs/by-name-overlay.nix byNameDir;
 
   # Names of every package defined under pkgs/by-name (flattened over shards).
   packageNames = lib.concatMap (
@@ -23,12 +22,7 @@ in
   perSystem =
     { system, ... }:
     let
-      pkgs =
-        (import inputs.nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        }).extend
-          overlay;
+      pkgs = import ./_base.nix { inherit inputs system; };
 
       # Drop anything not available on this system's platform, so that
       # x86_64-linux-only packages (ray/tinkerwell/fontbase)
