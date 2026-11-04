@@ -16,17 +16,25 @@ proxy isn't in nixpkgs at all. All of it is built here, version-matched.
 
 ```
 pkgs/
-├── by-name-overlay.nix             # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
-└── by-name/ne/
-    ├── netbird/package.nix          # one source tree -> any component via componentName
-    ├── netbird-management/package.nix  # { netbird }: netbird.override { componentName = …; }
-    ├── netbird-signal/package.nix
-    ├── netbird-relay/package.nix
-    ├── netbird-proxy/package.nix     # reverse proxy (not in nixpkgs)
-    ├── netbird-ui/package.nix
-    ├── netbird-upload/package.nix
-    └── netbird-dashboard/package.nix
+├── by-name-overlay.nix                 # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
+└── by-name/
+    ├── cr/crowdsec-openresty-bouncer/
+    ├── fo/fontbase/
+    ├── ne/netbird/                     # one source tree -> any component via componentName
+    ├── ne/netbird-management/          # { netbird }: netbird.override { componentName = …; }
+    ├── ne/netbird-signal/  ne/netbird-relay/  ne/netbird-proxy/
+    ├── ne/netbird-ui/  ne/netbird-upload/  ne/netbird-dashboard/
+    ├── ph/php85/
+    ├── ra/ray/
+    ├── ta/tabby-terminal/
+    ├── ti/tinkerwell/
+    ├── wa/wails3/
+    ├── wi/win-iso-remaster/
+    └── za/zabbix74/                    # package.nix + versions.nix + vendored component files
 ```
+
+The shard is the first two letters of the package name. Each directory holds a
+`package.nix`; there is no central list to register a package in.
 
 `by-name-overlay.nix` reads every `pkgs/by-name/<shard>/<name>/package.nix` and
 loads it with `final.callPackage` - exactly like nixpkgs. So a `package.nix` is
@@ -96,20 +104,32 @@ nix build nix-packages#hello     # from nixpkgs
 
 ```sh
 nix build .#netbird .#netbird-management .#netbird-dashboard
-nix flake check   # builds every package we define
-nix fmt
+nix flake check   # builds every package we define and runs the smoke tests
+nix fmt           # formats every .nix file (nixfmt-tree)
 ```
+
+The smoke tests in `modules/flake/checks/smoke-tests.nix` execute the CLI
+packages and match their output, so a binary that builds but does not run
+fails the check. GUI apps and packages without a headless entry point are only
+built; the file lists which ones and why.
 
 ## Bump a version
 
-`netbird` (`pkgs/by-name/ne/netbird/package.nix`) and `netbird-dashboard`
-(`pkgs/by-name/ne/netbird-dashboard/package.nix`):
+The agent skill `version-update` (`.pi/skills/version-update`) checks every
+package under `pkgs/by-name/` for a newer upstream version and bumps it. By hand:
 
 1. set `version`
-2. `nurl https://github.com/netbirdio/<repo> v<version>` -> new `hash`
+2. refresh the source `hash`: `nurl <repo-url> <tag>` for a Git source,
+   `nix store prefetch-file <url>` for a `fetchurl` tarball
 3. build once; copy the real `vendorHash` / `npmDepsHash` from the mismatch error
 
-One netbird bump updates the client and every server component at once.
+`netbird` (`pkgs/by-name/ne/netbird/package.nix`): one bump updates the client
+and every server component at once. `netbird-dashboard` is bumped on its own.
+
+`zabbix74`: bump the single `version` and `hash` in
+`pkgs/by-name/za/zabbix74/versions.nix` (a `fetchurl` tarball, so use
+`nix store prefetch-file`). That re-pins every component. Leave the vendored
+component files untouched.
 
 ## PHP 8.5
 
@@ -145,7 +165,8 @@ smoke test needs no change.
 Windows 11 ISO that boots UEFI without the "Press any key to boot from CD or
 DVD" prompt and installs Pro without an edition list (`sources/ei.cfg`). The
 source ISO is never modified; the output lands next to it as
-`*_pro_noprompt.iso`.
+`*_pro_noprompt.iso` (`*_noprompt.iso` with `--noprompt-only`), or at the path
+given with `-o FILE`.
 
 ```sh
 win-iso-remaster Windows11.iso                    # rebuild with ei.cfg
