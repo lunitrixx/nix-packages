@@ -20,6 +20,7 @@ pkgs/
 └── by-name/
     ├── cr/crowdsec-openresty-bouncer/
     ├── fo/fontbase/
+    ├── mc/mcp-forgejo/                 # npm tarball + committed runtime package-lock.json
     ├── ne/netbird/                     # one source tree -> any component via componentName
     ├── ne/netbird-management/          # { netbird }: netbird.override { componentName = …; }
     ├── ne/netbird-signal/  ne/netbird-relay/  ne/netbird-proxy/
@@ -69,6 +70,7 @@ Everything this overlay defines today; anything else stays nixpkgs' (see
 | `win-iso-remaster` | Tool that remasters a Windows 11 ISO (see below) |
 | `ray`, `tinkerwell`, `fontbase` | Unfree AppImage desktop apps (x86_64-linux) |
 | `tabby-terminal` | Tabby terminal, built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs |
+| `mcp-forgejo` | MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp`), dependencies pinned by a committed lock file; `mcp-` prefix as in nixpkgs, deliberately not `forgejo-mcp`, which is an unrelated Go server in nixpkgs |
 
 ## Usage
 
@@ -130,6 +132,13 @@ and every server component at once. `netbird-dashboard` is bumped on its own.
 `pkgs/by-name/za/zabbix74/versions.nix` (a `fetchurl` tarball, so use
 `nix store prefetch-file`). That re-pins every component. Leave the vendored
 component files untouched.
+
+`mcp-forgejo`: the npm tarball has no lock file, so a new version also needs a
+new `package-lock.json`. Bumping only `version` and `hash` keeps the old
+dependencies. Unpack the new tarball, remove `devDependencies` and `scripts`
+from its `package.json` (`jq 'del(.devDependencies, .scripts)'`), run
+`npm install --package-lock-only --ignore-scripts`, and copy the lock next to
+`package.nix`. The `hash` is `npm view @ric_/forgejo-mcp@<version> dist.integrity`.
 
 ## PHP 8.5
 

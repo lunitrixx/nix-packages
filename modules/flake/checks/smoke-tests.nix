@@ -125,6 +125,26 @@
           package = pkgs.zabbix74.proxy-pgsql;
           test = runTest "zabbix74-proxy-pgsql" "${pkgs.zabbix74.proxy-pgsql}/bin/zabbix_proxy" "-V" "Zabbix";
         };
+        # The server has no --version or --help: without FORGEJO_URL it exits with
+        # an error. So run a real MCP handshake over stdin (initialize, then
+        # tools/list) against a dummy URL. Listing tools needs no network, and in
+        # lazy mode the only tool is load_tool_area. The server exits at the end
+        # of stdin.
+        mcp-forgejo = {
+          package = pkgs.mcp-forgejo;
+          test =
+            let
+              requests = pkgs.writeText "forgejo-mcp-smoke-requests" ''
+                {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}
+                {"jsonrpc":"2.0","method":"notifications/initialized"}
+                {"jsonrpc":"2.0","id":2,"method":"tools/list"}
+              '';
+            in
+            runTest "mcp-forgejo"
+              "env FORGEJO_URL=http://forgejo.invalid FORGEJO_TOKEN=smoke FORGEJO_LAZY_TOOLS=true ${pkgs.mcp-forgejo}/bin/forgejo-mcp"
+              "< ${requests}"
+              "load_tool_area";
+        };
         # The bouncer is a Lua module for OpenResty, not a binary - so "run it"
         # means: render the snippet this package ships exactly as the consuming
         # NixOS module will, start a real openresty on it and serve a request.

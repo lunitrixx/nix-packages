@@ -2,6 +2,14 @@
 
 ## 2026-11-04
 
+### Added
+
+- **mcp-forgejo:** MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp` 0.3.1). The npm
+  tarball has no lock file, so a runtime-only `package-lock.json` is committed next to the
+  package. The `mcp-` prefix follows nixpkgs and keeps MCP servers together under `mc/`; it
+  also avoids shadowing nixpkgs' unrelated `forgejo-mcp`. A smoke test runs an MCP handshake
+  and checks the tool list.
+
 ### Fixed
 
 - **docs:** README now shows the full package tree, the smoke tests, the bump procedure for
