@@ -125,11 +125,11 @@ define stays as nixpkgs provides it.
 
 The flake exposes:
 
-- `overlays.default` — apply in a consumer; `pkgs.netbird` becomes ours, the
+- `overlays.default` - apply in a consumer; `pkgs.netbird` becomes ours, the
   rest stays nixpkgs'.
-- `legacyPackages.<system>` — nixpkgs with our overlay applied (ours + nixpkgs
+- `legacyPackages.<system>` - nixpkgs with our overlay applied (ours + nixpkgs
   fall-through).
-- `packages.<system>` — just our packages; also wired into `checks` so
+- `packages.<system>` - just our packages; also wired into `checks` so
   `nix flake check` builds every one of them. A package that is an *attrset* of
   derivations (see zabbix74 below) is flattened here into `<name>-<sub>` entries
   (e.g. `zabbix74-server-pgsql`) so `packages`/`checks` stay flat derivations;
@@ -149,7 +149,7 @@ General:
 
 Nix package set:
 
-- **`pkgs/by-name/<shard>/<name>/package.nix`** — same layout nixpkgs uses
+- **`pkgs/by-name/<shard>/<name>/package.nix`** - same layout nixpkgs uses
   (`<shard>` = first two letters of the name); file is named `package.nix`, not
   `default.nix`. Auto-discovered by the overlay; no central registration.
 - **Vendor faithfully.** Copy a package's `package.nix` from nixpkgs as-is and
@@ -157,15 +157,15 @@ Nix package set:
   doesn't have. Document each delta in a comment at the top of the file.
 - **Multi-component packages** (one source → many binaries, like netbird) keep a
   single parameterised parent (`componentName ? "…"`) and one tiny by-name file
-  per component doing `netbird.override { componentName = …; }` — exactly like
+  per component doing `netbird.override { componentName = …; }` - exactly like
   nixpkgs. The overlay's `final.callPackage` makes `{ netbird }` resolve to our
   package, so all components stay version-matched.
 - **Attrset-valued packages** (like zabbix74) are the exception to the per-component
   rule above. zabbix74's `package.nix` reproduces nixpkgs' `zabbixFor "v74"` block
-  and returns `recurseIntoAttrs (…)` — a single by-name entry whose value is an
+  and returns `recurseIntoAttrs (…)` - a single by-name entry whose value is an
   *attrset* of derivations (`.server-pgsql`, `.web`, `.agent2`, …). Use this shape
   (not separate by-name files per variant) **only when a consumer needs the attrset
-  access** — `nix-images` wires `pkgs.zabbix74.server-pgsql` etc. directly, so the
+  access** - `nix-images` wires `pkgs.zabbix74.server-pgsql` etc. directly, so the
   attrset is part of the contract. The flake's `packages`/`checks` flatten it into
   `zabbix74-<sub>` build targets; the consumer-facing `pkgs.zabbix74.<sub>` shape is
   untouched. Keep the vendored component files (`server.nix`, `web.nix`, …) verbatim
@@ -179,11 +179,11 @@ Nix package set:
 
 | What | How |
 |------|-----|
-| **New package** | Create `pkgs/by-name/<shard>/<name>/package.nix` (vendor from nixpkgs or write fresh). Auto-discovered — no wiring. |
+| **New package** | Create `pkgs/by-name/<shard>/<name>/package.nix` (vendor from nixpkgs or write fresh). Auto-discovered - no wiring. |
 | **Bump a version** | Edit the package's `version`, refresh the source `hash` (`nurl <url> <tag>`), then build once and copy the real `vendorHash` / `npmDepsHash` from the mismatch error. |
 
 A bump to the netbird parent updates the client **and** every server component
-at once — guaranteed version-matched.
+at once - guaranteed version-matched.
 
 For zabbix74, bump the single `version` + `hash` in `versions.nix` (the source is
 a `fetchurl` tarball, so get the hash with

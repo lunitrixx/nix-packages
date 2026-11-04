@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- **docs:** README now shows the full package tree, the smoke tests, the bump procedure for
+  every package (including zabbix74 and the `version-update` skill) and the output names and
+  `-o` option of `win-iso-remaster`. AGENTS.md uses plain hyphens instead of em dashes, as the
+  writing-style rule requires.
 - **formatter:** `nix fmt` works without arguments again. The formatter is now `nixfmt-tree`,
   which formats every `.nix` file in the tree; bare nixfmt read stdin and failed with
   "unexpected end of input". `pkgs/by-name-overlay.nix` is reformatted by it.
