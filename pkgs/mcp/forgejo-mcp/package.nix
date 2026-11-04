@@ -1,6 +1,6 @@
-# Not in nixpkgs. Named with the mcp- prefix nixpkgs uses for MCP servers; not
-# `forgejo-mcp`, which is an unrelated Go server (b4mad) this overlay must not
-# shadow. Upstream: SquareCows/forgejo-mcp, npm @ric_/forgejo-mcp. Built from the
+# Not in nixpkgs. Exposed as pkgs.mcp.forgejo-mcp: the mcp namespace keeps it
+# from shadowing nixpkgs' top-level `forgejo-mcp`, an unrelated Go server
+# (b4mad). Upstream: SquareCows/forgejo-mcp, npm @ric_/forgejo-mcp. Built from the
 # npm tarball: it ships the compiled dist/ but no lock file, so the runtime-only
 # package-lock.json next to this file pins every dependency. postPatch drops
 # devDependencies and scripts so package.json matches that lock.
@@ -12,7 +12,7 @@
 }:
 
 buildNpmPackage rec {
-  pname = "mcp-forgejo";
+  pname = "forgejo-mcp";
   version = "0.3.1";
 
   src = fetchurl {

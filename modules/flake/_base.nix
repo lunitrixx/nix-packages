@@ -13,7 +13,7 @@
   system,
 }:
 let
-  overlay = import ../../pkgs/by-name-overlay.nix ../../pkgs/by-name;
+  overlay = import ../../pkgs/overlay.nix;
 in
 (import inputs.nixpkgs {
   inherit system;

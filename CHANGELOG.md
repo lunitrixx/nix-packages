@@ -4,11 +4,14 @@
 
 ### Added
 
-- **mcp-forgejo:** MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp` 0.3.1). The npm
-  tarball has no lock file, so a runtime-only `package-lock.json` is committed next to the
-  package. The `mcp-` prefix follows nixpkgs and keeps MCP servers together under `mc/`; it
-  also avoids shadowing nixpkgs' unrelated `forgejo-mcp`. A smoke test runs an MCP handshake
-  and checks the tool list.
+- **mcp.forgejo-mcp:** MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp` 0.3.1). The
+  npm tarball has no lock file, so a runtime-only `package-lock.json` is committed next to the
+  package. A smoke test runs an MCP handshake and checks the tool list.
+- **mcp set:** MCP servers live in `pkgs/mcp/<name>/` and are exposed as `pkgs.mcp.<name>` with
+  their upstream names (flake `packages`: `mcp-<name>`). The namespace keeps them from
+  shadowing nixpkgs packages of the same name. The server added earlier today as
+  `mcp-forgejo` moved here as `mcp.forgejo-mcp`. `pkgs/overlay.nix` combines both trees.
+  `overlays.mcp` adds only `pkgs.mcp`, for consumers that do not want our top-level packages.
 
 ### Fixed
 

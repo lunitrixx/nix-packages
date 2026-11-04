@@ -4,7 +4,8 @@
 # derivations (e.g. zabbix74, which recurseIntoAttrs into .server / .web /
 # ...). The flake's packages/checks must be flat derivations, so flatten
 # attrset packages into "<name>-<sub>" entries. The overlay still exposes
-# the original shape (pkgs.zabbix74.server stays an attrset access).
+# the original shape (pkgs.zabbix74.server stays an attrset access). The MCP
+# server set pkgs.mcp from pkgs/mcp is flattened the same way (mcp-<name>).
 {
   inputs,
   lib,
@@ -47,6 +48,8 @@ in
           );
     in
     {
-      packages = lib.foldl' (acc: name: acc // flatten name pkgs.${name}) { } packageNames;
+      # pkgs.mcp is an attrset as well, so its servers become mcp-<name>.
+      packages =
+        lib.foldl' (acc: name: acc // flatten name pkgs.${name}) { } packageNames // flatten "mcp" pkgs.mcp;
     };
 }

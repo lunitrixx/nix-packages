@@ -14,7 +14,7 @@ Auto-discover every package under `pkgs/by-name/` and update each one to the lat
 Find all leaf `package.nix` files, then classify each one as a root (defines its own version) or a child (overrides a parent, same version - skip it).
 
 ```bash
-find pkgs/by-name -name 'package.nix' | sort
+find pkgs/by-name pkgs/mcp -name 'package.nix' | sort
 ```
 
 For each file, extract:
@@ -33,6 +33,8 @@ grep -Po 'repo\s*=\s*"\K[^"]+' <file>
 # For URL-sourced packages (fetchurl, AppImage, tarball, GCS):
 grep -Po 'url\s*=\s*"\K[^"]+' <file> | head -1
 ```
+
+Special case: **MCP servers in `pkgs/mcp/`** built from an npm tarball (e.g. `forgejo-mcp`) - the tarball has no lock file, so a bump also needs a regenerated `package-lock.json` next to `package.nix` (steps in README, "Bump a version"). Bumping only `version` and `hash` keeps the old dependencies.
 
 Special case: **zabbix74** - the version lives in `versions.nix`, not `package.nix`. Check `pkgs/by-name/za/zabbix74/versions.nix` instead. `package.nix` is an assembly file that uses `zabbixFor "v74"`.
 
