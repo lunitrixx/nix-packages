@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-04
+
+### Fixed
+
+- **formatter:** `nix fmt` works without arguments again. The formatter is now `nixfmt-tree`,
+  which formats every `.nix` file in the tree; bare nixfmt read stdin and failed with
+  "unexpected end of input". `pkgs/by-name-overlay.nix` is reformatted by it.
+
 ## 2026-10-28
 
 ### Changed
