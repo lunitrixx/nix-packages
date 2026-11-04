@@ -12,6 +12,9 @@
 
 ### Fixed
 
+- **license:** only `LICENSE` remains. `LICENSE.md` was a second MIT text added by the agent
+  config migration (#21); it lacked the notice that parts of the package expressions come from
+  nixpkgs, which the nixpkgs MIT license requires to be kept.
 - **docs:** README now shows the full package tree, the smoke tests, the bump procedure for
   every package (including zabbix74 and the `version-update` skill) and the output names and
   `-o` option of `win-iso-remaster`. AGENTS.md uses plain hyphens instead of em dashes, as the
