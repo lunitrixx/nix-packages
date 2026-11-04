@@ -130,8 +130,8 @@
         # tools/list) against a dummy URL. Listing tools needs no network, and in
         # lazy mode the only tool is load_tool_area. The server exits at the end
         # of stdin.
-        mcp-forgejo = {
-          package = pkgs.mcp-forgejo;
+        mcp-forgejo-mcp = {
+          package = pkgs.mcp.forgejo-mcp;
           test =
             let
               requests = pkgs.writeText "forgejo-mcp-smoke-requests" ''
@@ -140,8 +140,8 @@
                 {"jsonrpc":"2.0","id":2,"method":"tools/list"}
               '';
             in
-            runTest "mcp-forgejo"
-              "env FORGEJO_URL=http://forgejo.invalid FORGEJO_TOKEN=smoke FORGEJO_LAZY_TOOLS=true ${pkgs.mcp-forgejo}/bin/forgejo-mcp"
+            runTest "mcp-forgejo-mcp"
+              "env FORGEJO_URL=http://forgejo.invalid FORGEJO_TOKEN=smoke FORGEJO_LAZY_TOOLS=true ${pkgs.mcp.forgejo-mcp}/bin/forgejo-mcp"
               "< ${requests}"
               "load_tool_area";
         };

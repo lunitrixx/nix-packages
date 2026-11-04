@@ -12,15 +12,18 @@ First resident: **NetBird**. nixpkgs lagged behind upstream releases, holding
 back both the VPN client and the self-hosted server components - and the reverse
 proxy isn't in nixpkgs at all. All of it is built here, version-matched.
 
-## How it works (the nixpkgs `by-name` mechanism)
+## How it works (the nixpkgs `by-name` mechanism and the `mcp` set)
 
 ```
 pkgs/
+├── overlay.nix                         # the complete overlay: by-name + mcp
 ├── by-name-overlay.nix                 # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
+├── mcp-overlay.nix                     # pkgs/mcp/<name> -> pkgs.mcp.<name>
+├── mcp/
+│   └── forgejo-mcp/                    # npm tarball + committed runtime package-lock.json
 └── by-name/
     ├── cr/crowdsec-openresty-bouncer/
     ├── fo/fontbase/
-    ├── mc/mcp-forgejo/                 # npm tarball + committed runtime package-lock.json
     ├── ne/netbird/                     # one source tree -> any component via componentName
     ├── ne/netbird-management/          # { netbird }: netbird.override { componentName = …; }
     ├── ne/netbird-signal/  ne/netbird-relay/  ne/netbird-proxy/
@@ -43,6 +46,12 @@ a normal nixpkgs-style file (its `{ stdenv, lib, … }` arguments resolve from t
 overlaid set), and sibling references like `{ netbird }` resolve to *our*
 netbird, keeping every component version-matched. Because it's a plain overlay,
 anything we don't define stays as nixpkgs provides it.
+
+MCP servers live in `pkgs/mcp/<name>/package.nix` instead, without a shard.
+`mcp-overlay.nix` exposes them as one set, `pkgs.mcp.<name>`, so each server
+keeps its upstream name without shadowing a nixpkgs package of the same name:
+`pkgs.mcp.forgejo-mcp` is ours, while `pkgs.forgejo-mcp` stays nixpkgs'
+unrelated Go server. A new MCP server is a new directory under `pkgs/mcp/`.
 
 | Attribute | Binary | Role |
 |-----------|--------|------|
@@ -70,7 +79,7 @@ Everything this overlay defines today; anything else stays nixpkgs' (see
 | `win-iso-remaster` | Tool that remasters a Windows 11 ISO (see below) |
 | `ray`, `tinkerwell`, `fontbase` | Unfree AppImage desktop apps (x86_64-linux) |
 | `tabby-terminal` | Tabby terminal, built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs |
-| `mcp-forgejo` | MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp`), dependencies pinned by a committed lock file; `mcp-` prefix as in nixpkgs, deliberately not `forgejo-mcp`, which is an unrelated Go server in nixpkgs |
+| `mcp.forgejo-mcp` | MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp`), dependencies pinned by a committed lock file. In the flake's `packages`: `mcp-forgejo-mcp` |
 
 ## Usage
 
@@ -95,11 +104,28 @@ nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
 # pkgs.netbird is ours; pkgs.<anything we don't define> stays nixpkgs'
 ```
 
+For the MCP servers alone, apply `overlays.mcp` instead. It adds only
+`pkgs.mcp` and leaves netbird, php85 and the rest as nixpkgs has them. In
+devenv:
+
+```yaml
+inputs:
+  nix-packages:
+    url: github:lunitrixx/nix-packages
+    overlays:
+      - mcp
+```
+
+```nix
+command = lib.getExe pkgs.mcp.forgejo-mcp;
+```
+
 Or use the full set directly (ours + nixpkgs fall-through):
 
 ```sh
-nix build nix-packages#netbird   # ours
-nix build nix-packages#hello     # from nixpkgs
+nix build nix-packages#netbird           # ours
+nix build nix-packages#mcp.forgejo-mcp   # ours, from the MCP set
+nix build nix-packages#hello             # from nixpkgs
 ```
 
 ## Build / test
@@ -133,7 +159,7 @@ and every server component at once. `netbird-dashboard` is bumped on its own.
 `nix store prefetch-file`). That re-pins every component. Leave the vendored
 component files untouched.
 
-`mcp-forgejo`: the npm tarball has no lock file, so a new version also needs a
+`mcp.forgejo-mcp` (`pkgs/mcp/forgejo-mcp`): the npm tarball has no lock file, so a new version also needs a
 new `package-lock.json`. Bumping only `version` and `hash` keeps the old
 dependencies. Unpack the new tarball, remove `devDependencies` and `scripts`
 from its `package.json` (`jq 'del(.devDependencies, .scripts)'`), run

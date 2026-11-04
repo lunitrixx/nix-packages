@@ -66,7 +66,11 @@ modules/
 │       ├── packages.nix             # perSystem.checks = packages
 │       └── smoke-tests.nix          # perSystem.checks.smoke-* (execute the CLI packages)
 pkgs/
+├── overlay.nix                      # the complete overlay (by-name + mcp); used by
+│                                    #   overlays.default and by _base.nix
 ├── by-name-overlay.nix              # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
+├── mcp-overlay.nix                  # pkgs/mcp/<name>/package.nix -> pkgs.mcp.<name>
+├── mcp/forgejo-mcp/                 # npm tarball + committed runtime lock (not in nixpkgs)
 ├── by-name/ne/
 │   ├── netbird/package.nix          # one source tree → any component via componentName
 │   ├── netbird-management/package.nix  # { netbird }: netbird.override { componentName = …; }
@@ -92,10 +96,7 @@ pkgs/
 │                                    #   `tabby`, which is TabbyML in nixpkgs
 ├── by-name/wa/wails3/package.nix    # Go module netbird-ui builds against (not in nixos-26.05)
 ├── by-name/wi/win-iso-remaster/package.nix  # Windows 11 ISO remaster tool (not in nixpkgs)
-├── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
-└── by-name/mc/mcp-forgejo/          # npm tarball + committed runtime lock (not in nixpkgs);
-                                     #   mcp- prefix groups MCP servers under mc/; not
-                                     #   `forgejo-mcp`, an unrelated Go server in nixpkgs
+└── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
 ```
 
 Unfree and platform-restricted packages: the flake's own `packages`/`checks`
@@ -126,17 +127,26 @@ arguments resolve from the overlaid set), and sibling references like
 `{ netbird }` resolve to *our* netbird. Being a plain overlay, anything we don't
 define stays as nixpkgs provides it.
 
+`pkgs/mcp-overlay.nix` does the same for `pkgs/mcp/<name>/package.nix` (no
+shard), but exposes the result as one set, `pkgs.mcp.<name>`. MCP servers keep
+their upstream names there without shadowing a top-level nixpkgs package
+(nixpkgs' `forgejo-mcp` is an unrelated Go server). `pkgs/overlay.nix` combines
+both overlays; `overlays.default` and `_base.nix` both import it.
+
 The flake exposes:
 
 - `overlays.default` - apply in a consumer; `pkgs.netbird` becomes ours, the
   rest stays nixpkgs'.
+- `overlays.mcp` - only the MCP set `pkgs.mcp`, for consumers that want the MCP
+  servers without our top-level packages.
 - `legacyPackages.<system>` - nixpkgs with our overlay applied (ours + nixpkgs
   fall-through).
 - `packages.<system>` - just our packages; also wired into `checks` so
   `nix flake check` builds every one of them. A package that is an *attrset* of
   derivations (see zabbix74 below) is flattened here into `<name>-<sub>` entries
   (e.g. `zabbix74-server-pgsql`) so `packages`/`checks` stay flat derivations;
-  the overlay still exposes the original attrset shape.
+  the overlay still exposes the original attrset shape. The MCP set is
+  flattened the same way: `pkgs.mcp.forgejo-mcp` is `mcp-forgejo-mcp`.
 
 ## Conventions
 
@@ -155,6 +165,8 @@ Nix package set:
 - **`pkgs/by-name/<shard>/<name>/package.nix`** - same layout nixpkgs uses
   (`<shard>` = first two letters of the name); file is named `package.nix`, not
   `default.nix`. Auto-discovered by the overlay; no central registration.
+- **MCP servers go to `pkgs/mcp/<name>/package.nix`**, not by-name. `<name>` is
+  the upstream name; the server is `pkgs.mcp.<name>`. Auto-discovered as well.
 - **Vendor faithfully.** Copy a package's `package.nix` from nixpkgs as-is and
   keep deltas minimal: the pinned `version` + hashes, plus anything nixpkgs
   doesn't have. Document each delta in a comment at the top of the file.
@@ -183,6 +195,7 @@ Nix package set:
 | What | How |
 |------|-----|
 | **New package** | Create `pkgs/by-name/<shard>/<name>/package.nix` (vendor from nixpkgs or write fresh). Auto-discovered - no wiring. |
+| **New MCP server** | Create `pkgs/mcp/<name>/package.nix` with the upstream name. It becomes `pkgs.mcp.<name>`. |
 | **Bump a version** | Edit the package's `version`, refresh the source `hash` (`nurl <url> <tag>`), then build once and copy the real `vendorHash` / `npmDepsHash` from the mismatch error. |
 
 A bump to the netbird parent updates the client **and** every server component
@@ -217,7 +230,10 @@ inputs.nix-packages.url = "github:lunitrixx/nix-packages";
 ```
 
 After that `pkgs.netbird`, `pkgs.netbird-management`, `pkgs.netbird-proxy`,
-`pkgs.netbird-dashboard`, … are ours; everything else stays nixpkgs'. Bumping a
+`pkgs.netbird-dashboard`, … are ours, the MCP servers are `pkgs.mcp.<name>`;
+everything else stays nixpkgs'. To get only the MCP servers, apply
+`inputs.nix-packages.overlays.mcp` instead; `pkgs.mcp.<name>` is then the only
+change. Bumping a
 version here means re-locking the input downstream
 (`nix flake lock --update-input nix-packages`).
 
