@@ -222,20 +222,17 @@ nix flake update     # update the nixpkgs base
 
 ## Consumers
 
-Consume it as a flake input and apply the overlay:
+Consume it as a flake input named `lunitrixx`, with `inputs.nixpkgs.follows`
+set to the consumer's nixpkgs. Three ways, described in the README (Usage):
 
-```nix
-inputs.nix-packages.url = "github:lunitrixx/nix-packages";
-# then: nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
-```
+- single packages through the input, e.g.
+  `inputs.lunitrixx.legacyPackages.<system>.mcp.forgejo-mcp`
+  (`packages.<system>` is flat: `mcp-forgejo-mcp`, `zabbix74-agent2`);
+- `overlays.default`: `pkgs.netbird`, `pkgs.mcp.<name>`, … become ours;
+- `overlays.mcp`: only `pkgs.mcp` is added.
 
-After that `pkgs.netbird`, `pkgs.netbird-management`, `pkgs.netbird-proxy`,
-`pkgs.netbird-dashboard`, … are ours, the MCP servers are `pkgs.mcp.<name>`;
-everything else stays nixpkgs'. To get only the MCP servers, apply
-`inputs.nix-packages.overlays.mcp` instead; `pkgs.mcp.<name>` is then the only
-change. Bumping a
-version here means re-locking the input downstream
-(`nix flake lock --update-input nix-packages`).
+Bumping a version here means updating the input downstream
+(`nix flake update lunitrixx`, or `devenv update lunitrixx`).
 
 ## Skills
 
