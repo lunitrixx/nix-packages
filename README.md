@@ -66,30 +66,36 @@ unrelated Go server. A new MCP server is a new directory under `pkgs/mcp/`.
 
 ## Packages
 
-Everything this overlay defines today; anything else stays nixpkgs' (see
-`pkgs/by-name/`, auto-discovered - a new `package.nix` is a new package):
+Everything this repository defines today; anything else stays nixpkgs'.
+Packages are auto-discovered from `pkgs/by-name/` and `pkgs/mcp/` - a new
+`package.nix` is a new package. The last two columns show the name in the
+flake outputs (see [Usage](#usage)).
 
-| Package | What it is |
-|---------|------------|
-| `netbird`, `netbird-management`, … (8) | NetBird VPN, one source tree, version-matched - see the table above |
-| `zabbix74` | Zabbix 7.4, an attrset of derivations (`.server-pgsql`, `.web`, `.agent2`, …); version and hash pinned in `versions.nix` |
-| `crowdsec-openresty-bouncer` | CrowdSec's Lua remediation component for OpenResty (not in nixpkgs); ships Lua + config templates, no binary |
-| `php85` | PHP 8.5 pinned ahead of the channel, built with nixpkgs' `generic.nix` (see below) |
-| `wails3` | Wails v3 CLI, a Go module netbird-ui builds against (not in nixos-26.05) |
-| `win-iso-remaster` | Tool that remasters a Windows 11 ISO (see below) |
-| `ray`, `tinkerwell`, `fontbase` | Unfree AppImage desktop apps (x86_64-linux) |
-| `tabby-terminal` | Tabby terminal, built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs |
-| `mcp.forgejo-mcp` | MCP server for Forgejo (SquareCows, npm `@ric_/forgejo-mcp`), dependencies pinned by a committed lock file. In the flake's `packages`: `mcp-forgejo-mcp` |
+| Package | What it is | `packages.<system>` | `legacyPackages.<system>` |
+|---------|------------|---------------------|---------------------------|
+| NetBird (8) | NetBird VPN, one source tree, version-matched - see the table above | `netbird`, `netbird-management`, … | same |
+| Zabbix 7.4 | an attrset of derivations; version and hash pinned in `versions.nix` | `zabbix74-<component>`, e.g. `zabbix74-agent2` | `zabbix74.<component>`, e.g. `zabbix74.agent2` |
+| CrowdSec OpenResty bouncer | Lua remediation component for OpenResty (not in nixpkgs); ships Lua + config templates, no binary | `crowdsec-openresty-bouncer` | same |
+| PHP 8.5 | pinned ahead of the channel, built with nixpkgs' `generic.nix` (see below) | `php85` | same |
+| Wails v3 | CLI, a Go module netbird-ui builds against (not in nixos-26.05) | `wails3` | same |
+| Windows 11 ISO remaster | remasters a Windows 11 ISO (see below) | `win-iso-remaster` | same |
+| Ray, Tinkerwell, FontBase | unfree AppImage desktop apps (x86_64-linux) | `ray`, `tinkerwell`, `fontbase` | same |
+| Tabby terminal | built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs | `tabby-terminal` | same |
+| Forgejo MCP server | SquareCows, npm `@ric_/forgejo-mcp`; dependencies pinned by a committed lock file | `mcp-forgejo-mcp` | `mcp.forgejo-mcp` |
 
 ## Usage
 
-Add it as a flake input and apply the overlay:
+Add it as a flake input. Name the input `lunitrixx`, so everything from here
+reads `inputs.lunitrixx.*`. Let its `nixpkgs` follow yours, so no second
+nixpkgs is fetched.
+
+In a flake:
 
 ```nix
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
-    nix-packages = {
+    lunitrixx = {
       url = "github:lunitrixx/nix-packages";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -97,36 +103,60 @@ Add it as a flake input and apply the overlay:
 }
 ```
 
-Then pull the overlay in:
-
-```nix
-nixpkgs.overlays = [ inputs.nix-packages.overlays.default ];
-# pkgs.netbird is ours; pkgs.<anything we don't define> stays nixpkgs'
-```
-
-For the MCP servers alone, apply `overlays.mcp` instead. It adds only
-`pkgs.mcp` and leaves netbird, php85 and the rest as nixpkgs has them. In
-devenv:
+In devenv (`devenv.yaml`):
 
 ```yaml
 inputs:
-  nix-packages:
+  lunitrixx:
     url: github:lunitrixx/nix-packages
-    overlays:
-      - mcp
+    inputs:
+      nixpkgs:
+        follows: nixpkgs
 ```
+
+Then pick one of three ways.
+
+**Single packages through the input.** Every other package stays as nixpkgs
+has it, and the code shows where the package comes from:
 
 ```nix
-command = lib.getExe pkgs.mcp.forgejo-mcp;
+inputs.lunitrixx.packages.${pkgs.stdenv.hostPlatform.system}.netbird
+inputs.lunitrixx.legacyPackages.${pkgs.stdenv.hostPlatform.system}.zabbix74.agent2
+inputs.lunitrixx.legacyPackages.${pkgs.stdenv.hostPlatform.system}.mcp.forgejo-mcp
+
+# devenv, e.g. an MCP server for the agents:
+command = lib.getExe inputs.lunitrixx.legacyPackages.${pkgs.stdenv.hostPlatform.system}.mcp.forgejo-mcp;
 ```
 
-Or use the full set directly (ours + nixpkgs fall-through):
+`packages` is flat, so nested packages appear there as `zabbix74-agent2` and
+`mcp-forgejo-mcp`. `legacyPackages` keeps the nesting.
+
+**The whole overlay.** Our packages replace nixpkgs' in `pkgs`:
+
+```nix
+nixpkgs.overlays = [ inputs.lunitrixx.overlays.default ];
+# pkgs.netbird and pkgs.mcp.forgejo-mcp are ours; everything else stays nixpkgs'
+```
+
+**Only the MCP set.** `overlays.mcp` adds `pkgs.mcp` and changes nothing else:
+
+```nix
+nixpkgs.overlays = [ inputs.lunitrixx.overlays.mcp ];
+# pkgs.mcp.forgejo-mcp is ours; pkgs.netbird stays nixpkgs'
+```
+
+In devenv, an overlay is listed on the input (`overlays: [ default ]` or
+`overlays: [ mcp ]`) instead of in `nixpkgs.overlays`.
+
+Build a package without adding the input:
 
 ```sh
-nix build nix-packages#netbird           # ours
-nix build nix-packages#mcp.forgejo-mcp   # ours, from the MCP set
-nix build nix-packages#hello             # from nixpkgs
+nix build github:lunitrixx/nix-packages#netbird
+nix build github:lunitrixx/nix-packages#mcp.forgejo-mcp   # from legacyPackages
 ```
+
+After a change here, update the consumer's lock: `nix flake update lunitrixx`
+in a flake, `devenv update lunitrixx` in devenv.
 
 ## Build / test
 
@@ -144,7 +174,8 @@ built; the file lists which ones and why.
 ## Bump a version
 
 The agent skill `version-update` (`.pi/skills/version-update`) checks every
-package under `pkgs/by-name/` for a newer upstream version and bumps it. By hand:
+package under `pkgs/by-name/` and `pkgs/mcp/` for a newer upstream version and
+bumps it. By hand:
 
 1. set `version`
 2. refresh the source `hash`: `nurl <repo-url> <tag>` for a Git source,
@@ -159,9 +190,9 @@ and every server component at once. `netbird-dashboard` is bumped on its own.
 `nix store prefetch-file`). That re-pins every component. Leave the vendored
 component files untouched.
 
-`mcp.forgejo-mcp` (`pkgs/mcp/forgejo-mcp`): the npm tarball has no lock file, so a new version also needs a
-new `package-lock.json`. Bumping only `version` and `hash` keeps the old
-dependencies. Unpack the new tarball, remove `devDependencies` and `scripts`
+`mcp.forgejo-mcp` (`pkgs/mcp/forgejo-mcp`): the npm tarball has no lock file,
+so a new version also needs a new `package-lock.json`. Bumping only `version`
+and `hash` keeps the old dependencies. Unpack the new tarball, remove `devDependencies` and `scripts`
 from its `package.json` (`jq 'del(.devDependencies, .scripts)'`), run
 `npm install --package-lock-only --ignore-scripts`, and copy the lock next to
 `package.nix`. The `hash` is `npm view @ric_/forgejo-mcp@<version> dist.integrity`.
