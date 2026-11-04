@@ -92,7 +92,10 @@ pkgs/
 │                                    #   `tabby`, which is TabbyML in nixpkgs
 ├── by-name/wa/wails3/package.nix    # Go module netbird-ui builds against (not in nixos-26.05)
 ├── by-name/wi/win-iso-remaster/package.nix  # Windows 11 ISO remaster tool (not in nixpkgs)
-└── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
+├── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
+└── by-name/mc/mcp-forgejo/          # npm tarball + committed runtime lock (not in nixpkgs);
+                                     #   mcp- prefix groups MCP servers under mc/; not
+                                     #   `forgejo-mcp`, an unrelated Go server in nixpkgs
 ```
 
 Unfree and platform-restricted packages: the flake's own `packages`/`checks`
