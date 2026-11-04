@@ -60,7 +60,7 @@ modules/
 │   │                                #   skipped by import-tree, used by the outputs below
 │   ├── legacy-packages.nix          # flake.legacyPackages (ours + nixpkgs fall-through)
 │   ├── packages.nix                 # perSystem.packages (our packages, attrsets flattened)
-│   ├── formatter.nix                # perSystem.formatter (nixfmt-rfc-style, estate-wide)
+│   ├── formatter.nix                # perSystem.formatter (nixfmt-tree, formats the whole tree)
 │   ├── convention.nix               # perSystem.checks.module-name-uniqueness
 │   └── checks/
 │       ├── packages.nix             # perSystem.checks = packages

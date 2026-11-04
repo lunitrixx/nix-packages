@@ -13,8 +13,7 @@
 # be named `final`/`prev` - same mechanism, mandated names.
 #
 # Type: Path -> Overlay
-baseDirectory:
-final: prev:
+baseDirectory: final: prev:
 let
   inherit (prev.lib.attrsets)
     mapAttrs
