@@ -7,11 +7,11 @@
 - **toneboosters-archive:** Restored the ToneBoosters plugin archive, pinned to the stable 2.1.8
   (2.1.9 is still beta). It ships the VST2 `.so` files in `lib/vst` and the VST3 bundles in
   `lib/vst3`. A smoke test checks that every plugin library resolves its dependencies.
-- **serum2:** Xfer Serum 2 Linux beta, VST3 only (`lib/vst3/Serum2.vst3`). The download needs an
-  Xfer account login, so the build uses `requireFile` and stops with the instructions for adding
-  the archive to the store. Until its `sha256` is set, the package does not build. It needs
-  glibc >= 2.38 and an AVX2 CPU. Its library list comes from the NixOS Discourse thread
-  (79429) and is not yet verified with a real download.
+- **serum2:** Xfer Serum 2 Linux beta, VST3 only (`lib/vst3/Serum2.vst3`), built from the real
+  beta archive (`Serum2_Linux_Beta_26-10-31_bbcd310_x86_64.tar.xz`, pinned by `sha256`). The
+  download needs an Xfer account login, so the build uses `requireFile` and expects the archive
+  in the store (`nix-store --add-fixed`). It needs glibc >= 2.38 and an AVX2 CPU. The library
+  list was measured from `Serum2.so` (`ldd`); `autoPatchelf` finds all of them.
 
 ## 2026-11-04
 

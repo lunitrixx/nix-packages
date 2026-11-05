@@ -2,21 +2,24 @@
 #
 # The download sits behind an Xfer account login, so the archive cannot be
 # fetched: requireFile makes the build stop with the instructions below until
-# the file is in the store. Everything after that point is unverified until a
-# real download has been built - the archive layout and the library list
-# (taken from the NixOS Discourse thread 79429, tested by its author on
-# NixOS with REAPER 7.88, not with this package) may differ.
+# the file is in the store. The library list and the layout were measured from
+# the real archive (2026-11-05): ldd of Serum2.so and its moduleinfo.json.
 #
 # Requires glibc >= 2.38 and an AVX2 CPU.
 {
   lib,
   stdenv,
   requireFile,
-  unzip,
   autoPatchelfHook,
-  xorg,
+  libSM,
+  libICE,
+  libX11,
+  libXext,
+  libxcb,
+  libxcb-util,
+  libxcb-cursor,
+  libxcb-keysyms,
   libxkbcommon,
-  xkbutils,
   freetype,
   glib,
   cairo,
@@ -25,49 +28,44 @@
   fontconfig,
   expat,
   curl,
-  openssl,
+  zstd,
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "serum2";
-  version = "2.0.0-beta";
+  version = "2.1.5-beta-2026-10-31";
 
   src = requireFile {
-    name = "Serum2_Linux_beta.zip";
-    sha256 = lib.fakeSha256;
+    name = "Serum2_Linux_Beta_26-10-31_bbcd310_x86_64.tar.xz";
+    sha256 = "55c6c38abcbeafaa318d5074f6d917065bd70f4bf249cd70e3af732250c5827a";
     message = ''
       Xfer Serum 2 for Linux is a beta behind an Xfer Records login (you must own
-      Serum 2 and have an Xfer account). Download the Linux beta from
-      https://xferrecords.com/forums/serum/serum-2-linux-beta/ and then:
+      Serum 2 and have an Xfer account). Download the Linux beta archive from the
+      Xfer Records site (xferrecords.com, beta forum), then:
 
-        cp <downloaded-file> Serum2_Linux_beta.zip
-        nix-store --add-fixed sha256 Serum2_Linux_beta.zip
-        sha256sum Serum2_Linux_beta.zip
+        cp <downloaded-file> Serum2_Linux_Beta_26-10-31_bbcd310_x86_64.tar.xz
+        nix-store --add-fixed sha256 Serum2_Linux_Beta_26-10-31_bbcd310_x86_64.tar.xz
 
-      Send the printed digest to the repository maintainers (or open a pull
-      request that sets the sha256 attribute of pkgs/by-name/se/serum2/package.nix)
-      so the package can be built from it. Do not send the file itself.
+      The archive must have sha256 55c6c38abcbeafaa318d5074f6d917065bd70f4bf249cd70e3af732250c5827a.
+      Do not send the file itself to the repository maintainers.
     '';
   };
 
   sourceRoot = ".";
 
   nativeBuildInputs = [
-    unzip
     autoPatchelfHook
   ];
 
   buildInputs = [
-    xorg.libSM
-    xorg.libICE
-    xorg.libX11
-    xorg.libXext
-    xorg.libXfixes
-    xorg.libxcb
-    xorg.xcbutil
-    xorg.xcbutilcursor
-    xorg.xcbutilkeysyms
+    libSM
+    libICE
+    libX11
+    libXext
+    libxcb
+    libxcb-util
+    libxcb-cursor
+    libxcb-keysyms
     libxkbcommon
-    xkbutils
     freetype
     glib
     cairo
@@ -76,7 +74,7 @@ stdenv.mkDerivation (finalAttrs: {
     fontconfig
     expat
     curl
-    openssl
+    zstd
     (lib.getLib stdenv.cc.cc) # libstdc++, libgcc_s
   ];
 
@@ -89,13 +87,8 @@ stdenv.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    bundle=$(find . -type d -name Serum2.vst3 | head -n 1)
-    if [ -z "$bundle" ]; then
-      echo "no Serum2.vst3 bundle in the archive" >&2
-      exit 1
-    fi
     mkdir -p $out/lib/vst3
-    cp -r "$bundle" $out/lib/vst3/
+    cp -r Serum2.vst3 $out/lib/vst3/
 
     runHook postInstall
   '';
