@@ -30,8 +30,10 @@ pkgs/
     ├── ne/netbird-ui/  ne/netbird-upload/  ne/netbird-dashboard/
     ├── ph/php85/
     ├── ra/ray/
+    ├── se/serum2/                      # Xfer Serum 2 beta; the archive is fetched by hand (requireFile)
     ├── ta/tabby-terminal/
     ├── ti/tinkerwell/
+    ├── to/toneboosters-archive/
     ├── wa/wails3/
     ├── wi/win-iso-remaster/
     └── za/zabbix74/                    # package.nix + versions.nix + vendored component files
@@ -80,6 +82,8 @@ flake outputs (see [Usage](#usage)).
 | Wails v3 | CLI, a Go module netbird-ui builds against (not in nixos-26.05) | `wails3` | same |
 | Windows 11 ISO remaster | remasters a Windows 11 ISO (see below) | `win-iso-remaster` | same |
 | Ray, Tinkerwell, FontBase | unfree AppImage desktop apps (x86_64-linux) | `ray`, `tinkerwell`, `fontbase` | same |
+| ToneBoosters archive | unfree plugin archive, VST2 + VST3 (x86_64-linux), stable 2.1.8; plugins only, no headless entry point | `toneboosters-archive` | same |
+| Xfer Serum 2 | VST3, Linux beta (x86_64-linux, glibc >= 2.38, AVX2); the archive needs an Xfer account, so it is added to the store by hand (see the build message) | `serum2` | same |
 | Tabby terminal | built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs | `tabby-terminal` | same |
 | Forgejo MCP server | SquareCows, npm `@ric_/forgejo-mcp`; dependencies pinned by a committed lock file | `mcp-forgejo-mcp` | `mcp.forgejo-mcp` |
 
@@ -162,7 +166,7 @@ in a flake, `devenv update lunitrixx` in devenv.
 
 ```sh
 nix build .#netbird .#netbird-management .#netbird-dashboard
-nix flake check   # builds every package we define and runs the smoke tests
+nix flake check   # builds every package we define (except manual-download ones) and runs the smoke tests
 nix fmt           # formats every .nix file (nixfmt-tree)
 ```
 

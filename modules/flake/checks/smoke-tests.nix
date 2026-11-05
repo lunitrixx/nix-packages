@@ -285,6 +285,32 @@
                 echo "smoke-tabby-terminal: tabby ran, printed its version and loaded libglvnd"
               '';
         };
+        # Plugins have no headless entry point, so the check is that every
+        # shipped library (VST2 .so and the VST3 bundles' .so) resolves its
+        # dependencies - the failure a host would hit when loading the plugin.
+        toneboosters-archive = {
+          package = pkgs.toneboosters-archive;
+          test =
+            pkgs.runCommand "smoke-toneboosters-archive"
+              {
+                preferLocalBuild = true;
+                nativeBuildInputs = [ pkgs.glibc.bin ];
+              }
+              ''
+                mkdir -p $out
+                : > $out/ldd.log
+                for lib in ${pkgs.toneboosters-archive}/lib/vst/*.so \
+                  ${pkgs.toneboosters-archive}/lib/vst3/*.vst3/Contents/x86_64-linux/*.so; do
+                  ldd "$lib" >> $out/ldd.log
+                done
+                if grep -q "not found" $out/ldd.log; then
+                  grep "not found" $out/ldd.log >&2
+                  exit 1
+                fi
+                test "$(grep -c "=>" $out/ldd.log)" -gt 0
+                echo "smoke-toneboosters-archive: every plugin library resolves its dependencies"
+              '';
+        };
         # No real Windows ISO in a build, so the fixture mirrors its layout: a
         # UDF image whose UEFI El Torito entry points at efisys.bin, with
         # efisys_noprompt.bin beside it. The script must repoint the entry at
