@@ -161,6 +161,8 @@ Present a summary table of what was bumped:
 
 ## Edge cases
 
+- **toneboosters-archive**: check the changelog page (`https://www.toneboosters.com/changelog.html`) for the latest *stable* release. Beta builds (e.g. 2.1.9 beta) are listed there too and must not be used.
+- **serum2**: its archive sits behind an Xfer Records login, so there is no feed to read. Report it as `SKIPPED` with that reason; it is updated by hand from a downloaded file.
 - **Child packages** (override, callPackage parent): never bump directly. The parent bump updates them all.
 - **buildNpmPackage / buildGoModule**: the source `hash` from `nurl` is separate from `vendorHash` / `npmDepsHash` / `vendorHash`. Update `version` and source `hash` first, then build and capture the real dep-hash from the mismatch error.
 - **zabbix74**: version + hash in `versions.nix`, but the assembly is in `package.nix`. Only touch `versions.nix`.

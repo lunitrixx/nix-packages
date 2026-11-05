@@ -104,6 +104,14 @@ build with `config.allowUnfree = true` (consumers set their own), and `packages`
 drops anything not `lib.meta.availableOn` the current system, so the
 `x86_64-linux`-only entries above don't break `aarch64-linux` checks.
 
+Packages that need a manually downloaded file (login-gated vendors, e.g.
+`serum2`) use `requireFile` and set `passthru.requiresManualDownload = true`.
+They stay in `packages` but are left out of `checks`
+(`modules/flake/checks/packages.nix`), because no build machine can fetch the
+file and `nix flake check` would fail. Their smoke test, if any, must not need
+the file either. Once a sha256 is set, `nix build .#<name>` works on a machine
+that has the file in its store; `nix flake check` still skips it.
+
 ## Structure
 
 The flake follows the estate-wide flake-parts + import-tree convention:
@@ -142,7 +150,8 @@ The flake exposes:
 - `legacyPackages.<system>` - nixpkgs with our overlay applied (ours + nixpkgs
   fall-through).
 - `packages.<system>` - just our packages; also wired into `checks` so
-  `nix flake check` builds every one of them. A package that is an *attrset* of
+  `nix flake check` builds every one of them, except those marked
+  `requiresManualDownload` (see Unfree above). A package that is an *attrset* of
   derivations (see zabbix74 below) is flattened here into `<name>-<sub>` entries
   (e.g. `zabbix74-server-pgsql`) so `packages`/`checks` stay flat derivations;
   the overlay still exposes the original attrset shape. The MCP set is
@@ -156,7 +165,7 @@ General:
 - Prefer the project's own generators/scaffolding over hand-written boilerplate.
 - Run the formatter before finalizing changes: `nix fmt` (nixfmt).
 - Every change must pass the checks. `nix flake check` builds every package we
-  define - run it and make sure it passes.
+  define that needs no manual download - run it and make sure it passes.
 - Do not change dependencies without approval - this includes bumping the
   `nixpkgs` base in `flake.lock` or any vendored package version.
 
