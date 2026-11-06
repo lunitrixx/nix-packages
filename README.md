@@ -12,9 +12,56 @@ First resident: **NetBird**. nixpkgs lagged behind upstream releases, holding
 back both the VPN client and the self-hosted server components - and the reverse
 proxy isn't in nixpkgs at all. All of it is built here, version-matched.
 
+## Getting started
+
+1. Install [devenv](https://devenv.sh/getting-started/) 2.4.1 or newer and load its shell hook, for
+   zsh `eval "$(devenv hook zsh)"` in the shell configuration
+   ([auto activation](https://devenv.sh/auto-activation/)). In the repository run `devenv allow` once.
+   Without the hook, run `devenv shell`. The project does not use direnv.
+2. Run `secrets-setup` once if you use the shared OpenBao: it signs in and sets the keyring as
+   default provider. This package set declares no required secrets. Details: `docs/SECRETS.md`.
+3. Start an agent as usual with `pi` or `claude`.
+
+The dev shell comes from the shared base `headfirst-msp/devenv-base` (input `base` in `devenv.yaml`):
+Pi, Claude Code, SecretSpec, the git hooks (markdownlint, lychee offline, no em dash, betterleaks, no
+commit on `main`) and the changelog fragment scripts. `devenv.nix` adds `nurl`, replaces the base's
+Forgejo MCP server with the `nixos` MCP server, and runs `nix fmt -- --ci` and
+`nix flake check --no-build` in `enterTest`, so `devenv test` checks hooks, formatting and evaluation.
+The full `nix flake check` builds every package and is run on its own.
+
+The flake itself does not depend on devenv: `nix build`, `nix flake check` and `nix fmt` work
+without the shell.
+
+### Generated files
+
+The shell writes these on entry. They are not committed:
+
+| File | Content |
+| :--- | :--- |
+| `.mcp.json` | MCP servers for Pi and Claude Code |
+| `.pi/settings.json` | Pi project settings |
+| `.claude/` | Claude Code settings and the links to the skills in `.agents/skills/` |
+| `.pre-commit-config.yaml` | Git hook configuration |
+
+Personal settings go to `~/.pi/agent/settings.json` (Pi) or `.claude/settings.local.json`
+(Claude Code).
+
+### Orca
+
+`orca.yaml` runs `devenv allow` and one non-interactive shell start in every new Orca worktree, and
+`setupAgentStartupPolicy: wait-for-setup` starts the agent only after that. The agent then finds the
+generated files, the skill links and the git hooks in place.
+
+### Documentation
+
+`AGENTS.md` is the entry point for agents and lists where knowledge lives: `docs/ARCHITECTURE.md`
+(layout and mechanism), `docs/PACKAGING.md` (rules for adding and bumping packages),
+`docs/design-docs/` (decisions). Changes are recorded as fragments in `changelog.d/`
+(`changelog-add`), and `CHANGELOG.md` is rendered from them on `main`.
+
 ## How it works (the nixpkgs `by-name` mechanism and the `mcp` set)
 
-```
+```text
 pkgs/
 ├── overlay.nix                         # the complete overlay: by-name + mcp
 ├── by-name-overlay.nix                 # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
@@ -57,7 +104,7 @@ keeps its upstream name without shadowing a nixpkgs package of the same name:
 unrelated Go server. A new MCP server is a new directory under `pkgs/mcp/`.
 
 | Attribute | Binary | Role |
-|-----------|--------|------|
+| --- | --- | --- |
 | `netbird` | `netbird` | VPN client / agent |
 | `netbird-management` | `netbird-mgmt` | control plane + API |
 | `netbird-signal` | `netbird-signal` | peer signalling |
@@ -75,7 +122,7 @@ Packages are auto-discovered from `pkgs/by-name/` and `pkgs/mcp/` - a new
 flake outputs (see [Usage](#usage)).
 
 | Package | What it is | `packages.<system>` | `legacyPackages.<system>` |
-|---------|------------|---------------------|---------------------------|
+| --- | --- | --- | --- |
 | NetBird (8) | NetBird VPN, one source tree, version-matched - see the table above | `netbird`, `netbird-management`, … | same |
 | Zabbix 7.4 | an attrset of derivations; version and hash pinned in `versions.nix` | `zabbix74-<component>`, e.g. `zabbix74-agent2` | `zabbix74.<component>`, e.g. `zabbix74.agent2` |
 | CrowdSec OpenResty bouncer | Lua remediation component for OpenResty (not in nixpkgs); ships Lua + config templates, no binary | `crowdsec-openresty-bouncer` | same |
@@ -179,7 +226,7 @@ built; the file lists which ones and why.
 
 ## Bump a version
 
-The agent skill `version-update` (`.pi/skills/version-update`) checks every
+The agent skill `version-update` (`.agents/skills/version-update`) checks every
 package under `pkgs/by-name/` and `pkgs/mcp/` for a newer upstream version and
 bumps it. By hand:
 
