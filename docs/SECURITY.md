@@ -11,6 +11,6 @@
 - The `betterleaks` git hook scans every commit for secrets (rules and skipped paths: README of
   `headfirst-msp/devenv-base`). It skips `tests/`, `test/` and `vendor/`, so fake credentials belong
   in test directories, and real ones belong nowhere in the repository.
-- Report security findings in the issue tracker with the label `Kind/Security`.
-  Do not describe exploit details in public places.
+- Report security findings as a private security advisory on GitHub (Security tab of
+  `lunitrixx/nix-packages`), not as a public issue. Do not describe exploit details in public places.
 - Dependencies are updated on a regular cadence and when a security advisory appears.
