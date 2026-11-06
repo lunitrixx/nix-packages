@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-06
+
+### Added
+
+- **stably-orca:** Orca desktop app (stablyai/orca, MIT) as an AppImage, pinned to v1.4.237 (the newest
+  release at least two weeks old on 2026-11-06). The wrapper sets `ORCA_TELEMETRY_DISABLED=1`. It is
+  named `stably-orca`, because `orca` in nixpkgs is the GNOME screen reader. Only the package is
+  added; first start and the hooks into `~/.claude` and pi config are not part of it.
+
 ## 2026-11-05
 
 ### Added

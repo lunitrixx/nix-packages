@@ -31,6 +31,7 @@ pkgs/
     ├── ph/php85/
     ├── ra/ray/
     ├── se/serum2/                      # Xfer Serum 2 beta; the archive is fetched by hand (requireFile)
+    ├── st/stably-orca/                 # Orca desktop app, AppImage (telemetry off)
     ├── ta/tabby-terminal/
     ├── ti/tinkerwell/
     ├── to/toneboosters-archive/
@@ -84,6 +85,7 @@ flake outputs (see [Usage](#usage)).
 | Ray, Tinkerwell, FontBase | unfree AppImage desktop apps (x86_64-linux) | `ray`, `tinkerwell`, `fontbase` | same |
 | ToneBoosters archive | unfree plugin archive, VST2 + VST3 (x86_64-linux), stable 2.1.8; plugins only, no headless entry point | `toneboosters-archive` | same |
 | Xfer Serum 2 | VST3, Linux beta (x86_64-linux, glibc >= 2.38, AVX2); the archive needs an Xfer account, so it is added to the store by hand (see the build message) | `serum2` | same |
+| Orca | Orca desktop app (`stablyai/orca`, MIT), AppImage (x86_64-linux); `ORCA_TELEMETRY_DISABLED=1` set by the wrapper. Named `stably-orca`, since `orca` is the GNOME screen reader in nixpkgs | `stably-orca` | same |
 | Tabby terminal | built from the .deb (x86_64-linux); deliberately not `tabby`, which is TabbyML in nixpkgs | `tabby-terminal` | same |
 | Forgejo MCP server | SquareCows, npm `@ric_/forgejo-mcp`; dependencies pinned by a committed lock file | `mcp-forgejo-mcp` | `mcp.forgejo-mcp` |
 
