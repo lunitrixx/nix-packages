@@ -9,4 +9,5 @@ supersedes it and link the two.
 
 ## Records
 
-- (none yet)
+- [0001 zabbix74 as one attrset-valued package](0001-zabbix74-attrset.md)
+- [0002 MCP servers in their own set pkgs.mcp](0002-mcp-set.md)
