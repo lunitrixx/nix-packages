@@ -30,6 +30,10 @@
     # The PR template is a form text, not a document: it does not start with a heading.
     "^\\.github/pull_request_template\\.md$"
   ];
+  # The CHANGELOG history from before the fragments repeats "### Added" / "### Fixed" under each day.
+  git-hooks.hooks.markdownlint.settings.configuration.MD024 = {
+    siblings_only = true;
+  };
 
   # The full `nix flake check` builds every package, including large unfree AppImages, and is run on its
   # own. Here only formatting and evaluation of every output are checked.
