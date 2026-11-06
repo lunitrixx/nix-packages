@@ -1,255 +1,113 @@
 # AGENTS.md
 
-Canonical source of truth for AI coding agents working in this repository. This
-file is the single authority for project rules, workflow, conventions, and
-skills policy. Pi reads it natively; Claude Code and Codex-compatible agents
-read it through their respective adapters.
-
-> Keep this file human-authored and concise. It is read by multiple agents
-> (Pi, Claude Code, Codex, and any tool that can be pointed at it).
-
-## Architecture
-
-This repo is **Pi-native**. The canonical locations are:
-
-```
-AGENTS.md             # canonical project instructions for Pi and compatible agents
-CLAUDE.md             # Claude Code adapter, points back to AGENTS.md and .pi/rules/
-.pi/settings.json     # Pi project settings
-.pi/rules/            # Universal rules (workflow, PRs, writing style) loaded by agents
-.pi/skills/           # canonical Pi-native Agent Skills
-.claude/skills -> ../.pi/skills  # symlink to canonical skills
-.claude/rules -> ../.pi/rules    # symlink to canonical rules
-.mcp.json             # shared MCP server config where supported
-```
-
-- **Instructions:** `AGENTS.md` is the single source of truth. `CLAUDE.md` is a
-  thin adapter that delegates to `AGENTS.md`.
-- **Skills:** Pi-native skills live canonically in `.pi/skills/`. Pi auto-discovers
-  this directory. External harness skills (`~/.claude/skills`, `~/.codex/skills`)
-  are loaded via `.pi/settings.json`. `.claude/skills/` and `.claude/rules/` are
-  git-tracked symlinks to the canonical directories - no duplication.
-- **MCP servers:** Shared in `.mcp.json`, read by Pi and Claude Code.
+Map of this repository for AI coding agents. Keep this file short. Details live in `docs/`.
 
 ## Project
 
-**nix-packages** - A custom Nix package set, modelled on nixpkgs. It is an
-**overlay on top of nixpkgs**: consumers get our packages where we define them,
-and anything we don't define falls through to the original nixpkgs.
-
-**Tech stack:** Nix (Flake), nixfmt
-
-Two kinds of packages live here:
-
-- packages **pinned ahead of the nixpkgs channel** (vendored from nixpkgs and
-  version-pinned, so there's no wait for a channel bump), and
-- packages **nixpkgs doesn't ship at all**.
-
-First resident: **NetBird** (client/agent, the self-hosted server components,
-and the reverse proxy which isn't in nixpkgs).
-
-## Layout
-
-```
-flake.nix                            # inputs, mkFlake, the import-tree roots - nothing else
-modules/
-├── flake/                           # flake-level flake-parts modules, auto-imported by import-tree
-│   ├── systems.nix                  # target systems
-│   ├── overlays.nix                 # flake.overlays.default (the product)
-│   ├── _base.nix                    # base-set helper (nixpkgs + overlay + allowUnfree);
-│   │                                #   skipped by import-tree, used by the outputs below
-│   ├── legacy-packages.nix          # flake.legacyPackages (ours + nixpkgs fall-through)
-│   ├── packages.nix                 # perSystem.packages (our packages, attrsets flattened)
-│   ├── formatter.nix                # perSystem.formatter (nixfmt-tree, formats the whole tree)
-│   ├── convention.nix               # perSystem.checks.module-name-uniqueness
-│   └── checks/
-│       ├── packages.nix             # perSystem.checks = packages
-│       └── smoke-tests.nix          # perSystem.checks.smoke-* (execute the CLI packages)
-pkgs/
-├── overlay.nix                      # the complete overlay (by-name + mcp); used by
-│                                    #   overlays.default and by _base.nix
-├── by-name-overlay.nix              # mirrors nixpkgs' pkgs/top-level/by-name-overlay.nix
-├── mcp-overlay.nix                  # pkgs/mcp/<name>/package.nix -> pkgs.mcp.<name>
-├── mcp/forgejo-mcp/                 # npm tarball + committed runtime lock (not in nixpkgs)
-├── by-name/ne/
-│   ├── netbird/package.nix          # one source tree → any component via componentName
-│   ├── netbird-management/package.nix  # { netbird }: netbird.override { componentName = …; }
-│   ├── netbird-signal/package.nix      #   one tiny file per component, exactly like nixpkgs
-│   ├── netbird-relay/package.nix
-│   ├── netbird-proxy/package.nix     #   reverse proxy (not in nixpkgs)
-│   ├── netbird-ui/package.nix
-│   ├── netbird-upload/package.nix
-│   └── netbird-dashboard/package.nix # buildNpmPackage from netbirdio/dashboard
-├── by-name/za/zabbix74/
-│   ├── package.nix                  # assembly: recurseIntoAttrs (zabbixFor "v74") → an attrset
-│   ├── versions.nix                 # the single version + hash pin (v74)
-│   ├── server.nix agent.nix agent2.nix web.nix proxy.nix  # vendored verbatim from nixpkgs
-│   └── …                            # `pkgs.zabbix74.{server-pgsql,web,agent2,…}`
-├── by-name/cr/crowdsec-openresty-bouncer/package.nix  # Lua remediation component
-│                                    #   for OpenResty (not in nixpkgs); ships Lua +
-│                                    #   config templates, no binary
-├── by-name/ph/php85/package.nix     # PHP 8.5 pinned ahead of the channel; built with
-│                                   #   nixpkgs' generic.nix (our version/hash/patches)
-├── by-name/ra/ray/package.nix       # AppImage, Spatie debug app (unfree, x86_64-linux)
-├── by-name/ti/tinkerwell/package.nix    # AppImage, PHP tinker tool (unfree, x86_64-linux)
-├── by-name/ta/tabby-terminal/package.nix  # .deb, Tabby terminal (x86_64-linux); not
-│                                    #   `tabby`, which is TabbyML in nixpkgs
-├── by-name/wa/wails3/package.nix    # Go module netbird-ui builds against (not in nixos-26.05)
-├── by-name/wi/win-iso-remaster/package.nix  # Windows 11 ISO remaster tool (not in nixpkgs)
-└── by-name/fo/fontbase/package.nix  # AppImage, font manager (unfree, x86_64-linux)
-```
-
-Unfree and platform-restricted packages: the flake's own `packages`/`checks`
-build with `config.allowUnfree = true` (consumers set their own), and `packages`
-drops anything not `lib.meta.availableOn` the current system, so the
-`x86_64-linux`-only entries above don't break `aarch64-linux` checks.
-
-Packages that need a manually downloaded file (login-gated vendors, e.g.
-`serum2`) use `requireFile` and set `passthru.requiresManualDownload = true`.
-They stay in `packages` but are left out of `checks`
-(`modules/flake/checks/packages.nix`), because no build machine can fetch the
-file and `nix flake check` would fail. Their smoke test, if any, must not need
-the file either. Once a sha256 is set, `nix build .#<name>` works on a machine
-that has the file in its store; `nix flake check` still skips it.
-
-## Structure
-
-The flake follows the estate-wide flake-parts + import-tree convention:
-
-- `flake.nix` holds only the inputs, `mkFlake`, and the import-tree roots.
-  It never defines any output itself.
-- `modules/flake/` holds the flake-level flake-parts modules, auto-imported by
-  import-tree. One file per output; nesting under `modules/flake/` is free.
-- This repo has no class tree (no `modules/nixos/`, `modules/homeManager/`), so
-  its `flake.nix` has no `aspects` helper and no class imports.
-- `pkgs/by-name/**` is a plain nixpkgs-style package tree, not a module tree.
-  It is not touched by import-tree and is never written as a flake module.
-
-## How it works
-
-`pkgs/by-name-overlay.nix` is the same mechanism nixpkgs uses
-(`pkgs/top-level/by-name-overlay.nix`): it reads every
-`pkgs/by-name/<shard>/<name>/package.nix` and loads it with `final.callPackage`.
-So each `package.nix` is a normal nixpkgs-style file (its `{ stdenv, lib, … }`
-arguments resolve from the overlaid set), and sibling references like
-`{ netbird }` resolve to *our* netbird. Being a plain overlay, anything we don't
-define stays as nixpkgs provides it.
-
-`pkgs/mcp-overlay.nix` does the same for `pkgs/mcp/<name>/package.nix` (no
-shard), but exposes the result as one set, `pkgs.mcp.<name>`. MCP servers keep
-their upstream names there without shadowing a top-level nixpkgs package
-(nixpkgs' `forgejo-mcp` is an unrelated Go server). `pkgs/overlay.nix` combines
-both overlays; `overlays.default` and `_base.nix` both import it.
-
-The flake exposes:
-
-- `overlays.default` - apply in a consumer; `pkgs.netbird` becomes ours, the
-  rest stays nixpkgs'.
-- `overlays.mcp` - only the MCP set `pkgs.mcp`, for consumers that want the MCP
-  servers without our top-level packages.
-- `legacyPackages.<system>` - nixpkgs with our overlay applied (ours + nixpkgs
-  fall-through).
-- `packages.<system>` - just our packages; also wired into `checks` so
-  `nix flake check` builds every one of them, except those marked
-  `requiresManualDownload` (see Unfree above). A package that is an *attrset* of
-  derivations (see zabbix74 below) is flattened here into `<name>-<sub>` entries
-  (e.g. `zabbix74-server-pgsql`) so `packages`/`checks` stay flat derivations;
-  the overlay still exposes the original attrset shape. The MCP set is
-  flattened the same way: `pkgs.mcp.forgejo-mcp` is `mcp-forgejo-mcp`.
-
-## Conventions
-
-General:
-
-- Follow existing code conventions; check sibling files before creating anything new.
-- Prefer the project's own generators/scaffolding over hand-written boilerplate.
-- Run the formatter before finalizing changes: `nix fmt` (nixfmt).
-- Every change must pass the checks. `nix flake check` builds every package we
-  define that needs no manual download - run it and make sure it passes.
-- Do not change dependencies without approval - this includes bumping the
-  `nixpkgs` base in `flake.lock` or any vendored package version.
-
-Nix package set:
-
-- **`pkgs/by-name/<shard>/<name>/package.nix`** - same layout nixpkgs uses
-  (`<shard>` = first two letters of the name); file is named `package.nix`, not
-  `default.nix`. Auto-discovered by the overlay; no central registration.
-- **MCP servers go to `pkgs/mcp/<name>/package.nix`**, not by-name. `<name>` is
-  the upstream name; the server is `pkgs.mcp.<name>`. Auto-discovered as well.
-- **Vendor faithfully.** Copy a package's `package.nix` from nixpkgs as-is and
-  keep deltas minimal: the pinned `version` + hashes, plus anything nixpkgs
-  doesn't have. Document each delta in a comment at the top of the file.
-- **Multi-component packages** (one source → many binaries, like netbird) keep a
-  single parameterised parent (`componentName ? "…"`) and one tiny by-name file
-  per component doing `netbird.override { componentName = …; }` - exactly like
-  nixpkgs. The overlay's `final.callPackage` makes `{ netbird }` resolve to our
-  package, so all components stay version-matched.
-- **Attrset-valued packages** (like zabbix74) are the exception to the per-component
-  rule above. zabbix74's `package.nix` reproduces nixpkgs' `zabbixFor "v74"` block
-  and returns `recurseIntoAttrs (…)` - a single by-name entry whose value is an
-  *attrset* of derivations (`.server-pgsql`, `.web`, `.agent2`, …). Use this shape
-  (not separate by-name files per variant) **only when a consumer needs the attrset
-  access** - `nix-images` wires `pkgs.zabbix74.server-pgsql` etc. directly, so the
-  attrset is part of the contract. The flake's `packages`/`checks` flatten it into
-  `zabbix74-<sub>` build targets; the consumer-facing `pkgs.zabbix74.<sub>` shape is
-  untouched. Keep the vendored component files (`server.nix`, `web.nix`, …) verbatim
-  and confine deltas to `versions.nix` + the `package.nix` assembly.
-- **The exposed overlay names its arguments `final`/`prev`.** nixpkgs uses
-  `self`/`super` internally, but `nix flake check` requires `final`/`prev` for a
-  flake `overlays.default`. Same mechanism, mandated names.
-- **Always pin a specific version + hash.** Never track a branch or `latest`.
-
-## Adding / bumping packages
-
-| What | How |
-|------|-----|
-| **New package** | Create `pkgs/by-name/<shard>/<name>/package.nix` (vendor from nixpkgs or write fresh). Auto-discovered - no wiring. |
-| **New MCP server** | Create `pkgs/mcp/<name>/package.nix` with the upstream name. It becomes `pkgs.mcp.<name>`. |
-| **Bump a version** | Edit the package's `version`, refresh the source `hash` (`nurl <url> <tag>`), then build once and copy the real `vendorHash` / `npmDepsHash` from the mismatch error. |
-
-A bump to the netbird parent updates the client **and** every server component
-at once - guaranteed version-matched.
-
-For zabbix74, bump the single `version` + `hash` in `versions.nix` (the source is
-a `fetchurl` tarball, so get the hash with
-`nix store prefetch-file <url>`, not `nurl`). That re-pins every
-component at once. Leave the vendored component files untouched.
+- Name: `lunitrixx-nix-packages`
+- Purpose: Custom Nix package set modelled on nixpkgs: an overlay that adds our packages on top of nixpkgs (anything we do not define falls through to nixpkgs)
+- Stack: `Nix flake (flake-parts, import-tree), nixpkgs nixos-26.05, nixfmt-tree; dev shell devenv 2.4.1 with headfirst-msp/devenv-base`
 
 ## Commands
 
-```sh
-# Build / test packages (checks = all our packages)
-nix build .#netbird .#netbird-management .#netbird-dashboard
-nix flake check
+- Setup: `devenv shell` (run first; it also generates `.mcp.json`, `.pi/settings.json` and `.claude/`, which are not committed)
+- Secrets are declared in `secretspec.toml`. Run a command that needs them as `secretspec run --reason "<why>" -- <command>`; SecretSpec asks for a reason in a session it detects as an agent and logs it. Never read a secret out of the environment into files, logs or replies. Setup per person: `docs/SECRETS.md`.
+- Test: `nix flake check` (builds every package that needs no manual download and runs the smoke tests; must pass before every change is finished). Quick check of hooks, formatting and evaluation: `devenv test`
+- Lint: `nix fmt` (nixfmt-tree, formats every `.nix` file; run before finishing a change). Check only: `nix fmt -- --ci`
+- Build: `nix build .#<name>`, for example `nix build .#netbird .#zabbix74-agent2 .#mcp-forgejo-mcp`
+- Source hash for a bump: `nurl <repo-url> <tag>` for a Git source, `nix store prefetch-file <url>` for a `fetchurl` tarball; `vendorHash` / `npmDepsHash` come from the mismatch error of one build
 
-# Get a source hash (vendorHash/npmDepsHash come from the build mismatch error)
-nix run nixpkgs#nurl -- https://github.com/<owner>/<repo> v<version>
+## This project
 
-nix fmt              # format (nixfmt)
-nix flake update     # update the nixpkgs base
-```
+- `flake.nix` holds only the inputs, `mkFlake` and the import-tree root. Every output is one file in `modules/flake/`; files and directories starting with `_` are skipped by import-tree. Layout and mechanism: `docs/ARCHITECTURE.md`.
+- `pkgs/by-name/**` and `pkgs/mcp/**` are plain nixpkgs-style package trees, never flake modules. A new `package.nix` is a new package; there is no central registration.
+- Packaging rules (vendoring from nixpkgs, multi-component and attrset-valued packages, unfree and manual-download packages, bumps): `docs/PACKAGING.md`. Read it before adding or bumping a package.
+- Always pin a specific version and hash. Never track a branch or `latest`.
+- Do not change dependencies without approval: this includes `nix flake update` (the nixpkgs base in `flake.lock`) and any vendored package version. The skill `version-update` does approved bumps.
+- The exposed overlays name their arguments `final`/`prev`; `nix flake check` requires it.
+- `packages.<system>` is flat (`zabbix74-agent2`, `mcp-forgejo-mcp`); the overlay and `legacyPackages` keep the nesting (`pkgs.zabbix74.agent2`, `pkgs.mcp.forgejo-mcp`). `nix-images` uses `pkgs.zabbix74.<component>`, so that shape is a contract.
+- A bump reaches consumers only after they update the input named `lunitrixx` (`nix flake update lunitrixx` or `devenv update lunitrixx`). `headfirst-msp/devenv-base` consumes `mcp.forgejo-mcp` this way.
+- The repository is hosted on GitHub (`lunitrixx/nix-packages`); use `gh`, not `fj`.
+- Pull requests: never open one without asking first, and never merge one without explicit confirmation; a green check is not a verified change. Always squash-merge with one clean message whose title ends with the PR number: `type(scope): summary (#N)`.
+- Commits: `type(scope): summary` (types feat, fix, chore, docs, refactor, test, perf; summary imperative, at most 72 characters); the body explains why. One message per change. No trailer block on commits or PRs.
+- After a change to the structure, entry points or commands, check that `README.md` is still accurate.
 
-## Consumers
+## Where knowledge lives
 
-Consume it as a flake input named `lunitrixx`, with `inputs.nixpkgs.follows`
-set to the consumer's nixpkgs. Three ways, described in the README (Usage):
+- Architecture and layers: `docs/ARCHITECTURE.md`
+- Product behaviour: `docs/product-specs/index.md`
+- Design decisions: `docs/design-docs/index.md`
+- Plans: `docs/PLANS.md`. Active plans in `docs/exec-plans/active/`, finished ones in `docs/exec-plans/completed/`
+- Known tech debt: `docs/exec-plans/tech-debt-tracker.md`
+- Security rules: `docs/SECURITY.md`
+- Secrets (SecretSpec, declared secrets, setup): `docs/SECRETS.md`
+- Packaging rules and how to add or bump a package: `docs/PACKAGING.md`
 
-- single packages through the input, e.g.
-  `inputs.lunitrixx.legacyPackages.<system>.mcp.forgejo-mcp`
-  (`packages.<system>` is flat: `mcp-forgejo-mcp`, `zabbix74-agent2`);
-- `overlays.default`: `pkgs.netbird`, `pkgs.mcp.<name>`, … become ours;
-- `overlays.mcp`: only `pkgs.mcp` is added.
+## Plans, skills and tools
 
-Bumping a version here means updating the input downstream
-(`nix flake update lunitrixx`, or `devenv update lunitrixx`).
+- Multi-step work gets a plan in `docs/exec-plans/active/` before implementation, as described in `docs/PLANS.md`. Move it to `docs/exec-plans/completed/` when the work is done.
+- A plan is detailed and researched: goal, sources with versions, rejected alternatives, steps and verification. Its required sections are listed in `docs/PLANS.md`.
+- Plans and skills never open with a role line such as "You are an expert in ...". State the purpose and the procedure directly.
+- Skills are written once in `.agents/skills/<name>/SKILL.md`. devenv links each skill directory into `.claude/skills/` on shell entry. Edit the source, then re-enter the shell.
+- Some skills are adapted copies of upstream skills. Before changing or updating one, read `.agents/skills/THIRD_PARTY.md`.
+- Pi and Claude Code are installed by devenv through the shared base `headfirst-msp/devenv-base` (`devenv.yaml`). `.pi/settings.json` and `.claude/` are generated and not committed. Personal Pi settings go to `~/.pi/agent/settings.json`, personal Claude settings to `.claude/settings.local.json`.
 
-## Skills
+## Boundaries
 
-Reusable agent skills live in `.pi/skills/`. Pi auto-discovers this directory;
-Claude Code accesses them through the `.claude/skills -> ../.pi/skills` symlink.
+- Never commit to `main`. Branches: `feat/<topic>` or `fix/<topic>`.
+- Delete a branch once its pull request is merged: on GitHub (`gh pr merge --squash -d` or the button after the merge) and locally (`git branch -d <branch>`, `git fetch --prune`).
+- Never commit secrets. `.env` is never read into docs or commits.
+- Never bypass git hooks (`--no-verify`, `-n`) on commit or push. When a hook fails, fix the cause. A false positive of the secret scan is silenced with a `betterleaks:allow` comment or an entry in `.betterleaksignore`, and only after the user confirms it is not a secret.
+- Secrets are declared in `secretspec.toml` and provided by SecretSpec from each person's own store. Never write a secret value into the repository, and never read it out of the environment into files, logs or replies.
+- Update the matching doc in the same change when behaviour changes.
+- Record architecture decisions in `docs/design-docs/` as short records.
+- Every lock or pin file of any tool or package manager is committed. Never add one to `.gitignore`.
+- Change dependencies only through the tool that owns the lock file. Never edit a lock file by hand.
 
-| Skill | Description |
-|---|---|
-| `version-update` | Check all packages for newer upstream versions and update them with pinned hashes. Auto-discovers every package under `pkgs/by-name/`. |
+## Changelog (mandatory)
 
+Record every user-facing change as one fragment in `changelog.d/`, never by editing `CHANGELOG.md`.
 
+- Create it with `changelog-add "What changed for the reader, and why"`. It writes
+  `changelog.d/YYYYMMDD-<hex>.md` with one Markdown bullet. The date is the day of the change. There
+  are no versions and no `Unreleased` heading.
+- A branch with `feat`, `fix` or `perf` commits needs a fragment. The hook `changelog-required`
+  checks it on push.
+- `CHANGELOG.md` is rendered from the fragments on `main` with `changelog-render`. A branch never
+  edits it, so parallel branches do not conflict.
+
+## Language (mandatory)
+
+All code, in any programming or markup language (PHP, JavaScript, TypeScript,
+Shell, PowerShell, HTML, CSS, SQL, Nix, Terraform, YAML, ...), and all Git
+artifacts are written in English only, never in German:
+
+- Identifiers, file and directory names, tests and test names
+- Comments of every kind (line, block, doc comments, PHPDoc, JSDoc, HTML and CSS comments)
+- Log messages and exception or error texts in code
+- Commit messages, branch names, PR titles and bodies, issues, review comments
+- CHANGELOG.md entries and tags
+
+German is allowed only in chat replies to the user. User-visible product texts
+(UI labels, mails, PDFs) follow the product's language, not this rule; translation
+keys stay English. Before every commit and PR, check your own text; if it contains
+German, rewrite it in English first.
+
+## Writing and comments (mandatory)
+
+Applies to code, comments, commit messages, PR texts, docs and the CHANGELOG.
+
+- No em dashes or en dashes. Use the plain hyphen-minus `-`.
+- No emojis, decorative symbols or emoji bullets. No filler such as "Certainly",
+  "Great question" or marketing wording.
+- Keep prose short and factual.
+
+Comments:
+
+- Write a comment only where the code does not explain itself: a non-obvious
+  decision, a workaround, a constraint, an edge case.
+- Explain why, not what. Never restate the code.
+- Doc comments follow the language standard (PHPDoc, JSDoc, docstrings, ...) with one
+  summary line. Document parameters only when names and types do not make them obvious.
+- Do not comment trivial code. A variable named `$user` needs no comment.
+- No banner comments, section dividers, commented-out code or change logs in code.
