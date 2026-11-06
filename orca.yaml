@@ -1,0 +1,5 @@
+scripts:
+  setup: |
+    devenv allow
+    devenv shell -- true
+setupAgentStartupPolicy: wait-for-setup

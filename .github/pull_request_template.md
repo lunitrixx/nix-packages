@@ -1,17 +1,11 @@
-## Summary
+Before you submit:
 
-<!-- What does this change and why? Link any related issue. -->
+- Work on a branch named `feat/<topic>` or `fix/<topic>`, never on `main`.
+- Title the PR `type(scope): summary` (Conventional Commits). It becomes the squash commit title, with the PR number appended: `type(scope): summary (#N)`.
+- Run `nix fmt`, `devenv test` and `nix flake check`, and fix what they report.
+- Dependency change (nixpkgs base, vendored or pinned version)? Only with approval; say who approved it.
+- User-facing change? Add a changelog fragment with `changelog-add`.
+- Update the docs the change touches (README, `docs/`).
+- Used AI tools? Name them in the description and review the diff yourself before you ask for a review.
 
-## Testing
-
-<!-- How was this verified? Commands, manual steps, results. -->
-
-## Checklist
-
-- [ ] Branch named `feat/<topic>` or `fix/<topic>`
-- [ ] Formatter and linter run
-- [ ] Change covered by tests; affected tests pass
-- [ ] No dependency changes (or explicitly approved)
-- [ ] Written in English; plain `-` dashes; no emoji overuse
-
-<!-- Merge note: this repo squash-merges with a single clean commit message. -->
+Replace this text with a description of what the PR does and why, and how it was verified.

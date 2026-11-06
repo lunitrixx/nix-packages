@@ -114,7 +114,9 @@
   argument 'withJitSealloc'". The override now applies only where pcre2 still
   accepts the argument, so the nixos-26.05 build is unchanged.
 
-## Unreleased
+## 2026-10-13
+
+Collected under `Unreleased` between 2026-06-29 and 2026-10-13, before entries were dated.
 
 ### Added
 
@@ -156,6 +158,44 @@
   comment of `pkgs/by-name/cr/crowdsec-openresty-bouncer/package.nix`.
   A smoke test starts a real OpenResty on the shipped snippet and serves a
   request through the bouncer.
+- **smoke tests:** `nix flake check` now executes the CLI packages, not
+  just building them. Each `smoke-*` check runs the binary with a version
+  command and requires the output to match a regex - exit status 0 alone
+  does not pass, so a binary that prints its help instead of a version
+  still goes red. Covers claude-code, pi, wails3, tinkerwell
+  (on a virtual display), the netbird CLIs, netbird-dashboard (artifact
+  check) and all zabbix server/proxy/agent variants. GUI/VST packages stay
+  build-only; the list and the reasoning are in `pkgs/smoke-tests.nix`.
+  Note: `smoke-tinkerwell` requires `--option sandbox relaxed` (Electron
+  does not survive the strict build sandbox).
+- **openjet:** Added v0.4.31. Local AI coding agent for OpenAI-compatible
+  local runtimes, as a CLI (`openjet` and `open-jet`). First Python package in
+  this set; built from the PyPI wheel because upstream's tags and its declared
+  version disagree and PyPI ships no sdist. The `mcp` extra is included, the
+  `cloud` extra (`keyring`, `litellm`, upstream's "Slipstream" feature) is
+  deliberately left out. Upstream writes its config, its downloaded models and
+  its token totals next to its own code, which under Nix is the read-only
+  store - the install root is redirected to `$OPENJET_HOME`, else
+  `$XDG_DATA_HOME/openjet`, else `~/.local/share/openjet`, and `load_config()`'s
+  fallback to `./config.yaml` in the current working directory is removed so the
+  configuration no longer depends on where the tool was started. The workflow
+  runner, which upstream spawns as a bare `sys.executable -c …`, now gets the
+  parent's `sys.path` passed down; without that `openjet workflow start` exited
+  0 while the runner died immediately on a missing `yaml`. Telemetry stays as
+  upstream ships it: opt-in, off until consent is granted. Upstream also
+  advertises a Python SDK; it is not exposed here (this is an application, not a
+  `python3Packages` entry), and `openjet --update` cannot work in the store -
+  it reports "already up to date" whatever the case, so updating means bumping
+  the package here.
+- **herdr:** Added v0.8.2. Terminal workspace manager for AI coding agents.
+  Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
+  Vendored from numtide/llm-agents.nix.
+- **toneboosters-archive:** Added v2.1.8. Collection of 17 ToneBoosters audio
+  plugins (VST2, VST3, standalone). Prebuilt x86_64-linux binaries, unfree.
+- **vital:** Vendored from nixpkgs and bumped to v1.6.4 (ahead of nixpkgs at
+  v1.5.5). This fixes a black screen on Wayland + Mesa 26. Added as
+  `pkgs/by-name/vi/vital/package.nix` and auto-discovered by the by-name
+  overlay.
 
 ### Changed
 
@@ -264,50 +304,6 @@
 - **audiogridder-plugin, toneboosters-archive, vital:** Removed from the
   package set. `vital` also exists in nixpkgs, so `pkgs.vital` now resolves
   to nixpkgs' version again.
-
-### Added
-
-- **smoke tests:** `nix flake check` now executes the CLI packages, not
-  just building them. Each `smoke-*` check runs the binary with a version
-  command and requires the output to match a regex - exit status 0 alone
-  does not pass, so a binary that prints its help instead of a version
-  still goes red. Covers claude-code, pi, wails3, tinkerwell
-  (on a virtual display), the netbird CLIs, netbird-dashboard (artifact
-  check) and all zabbix server/proxy/agent variants. GUI/VST packages stay
-  build-only; the list and the reasoning are in `pkgs/smoke-tests.nix`.
-  Note: `smoke-tinkerwell` requires `--option sandbox relaxed` (Electron
-  does not survive the strict build sandbox).
-- **openjet:** Added v0.4.31. Local AI coding agent for OpenAI-compatible
-  local runtimes, as a CLI (`openjet` and `open-jet`). First Python package in
-  this set; built from the PyPI wheel because upstream's tags and its declared
-  version disagree and PyPI ships no sdist. The `mcp` extra is included, the
-  `cloud` extra (`keyring`, `litellm`, upstream's "Slipstream" feature) is
-  deliberately left out. Upstream writes its config, its downloaded models and
-  its token totals next to its own code, which under Nix is the read-only
-  store - the install root is redirected to `$OPENJET_HOME`, else
-  `$XDG_DATA_HOME/openjet`, else `~/.local/share/openjet`, and `load_config()`'s
-  fallback to `./config.yaml` in the current working directory is removed so the
-  configuration no longer depends on where the tool was started. The workflow
-  runner, which upstream spawns as a bare `sys.executable -c …`, now gets the
-  parent's `sys.path` passed down; without that `openjet workflow start` exited
-  0 while the runner died immediately on a missing `yaml`. Telemetry stays as
-  upstream ships it: opt-in, off until consent is granted. Upstream also
-  advertises a Python SDK; it is not exposed here (this is an application, not a
-  `python3Packages` entry), and `openjet --update` cannot work in the store -
-  it reports "already up to date" whatever the case, so updating means bumping
-  the package here.
-- **herdr:** Added v0.8.2. Terminal workspace manager for AI coding agents.
-  Builds from source on Linux (Rust + zig_0_15 for vendored libghostty-vt).
-  Vendored from numtide/llm-agents.nix.
-- **toneboosters-archive:** Added v2.1.8. Collection of 17 ToneBoosters audio
-  plugins (VST2, VST3, standalone). Prebuilt x86_64-linux binaries, unfree.
-- **vital:** Vendored from nixpkgs and bumped to v1.6.4 (ahead of nixpkgs at
-  v1.5.5). This fixes a black screen on Wayland + Mesa 26. Added as
-  `pkgs/by-name/vi/vital/package.nix` and auto-discovered by the by-name
-  overlay.
-
-### Removed
-
 - **openjet:** Removed from the package set on the requester's preference.
   The package was not found broken - it built, and its three smoke tests
   passed. Its two consumers dropped it first (`lunitrixx/nix-config` #198,
@@ -323,4 +319,3 @@
   `lunitrixx/nix-config` earlier. Gone with it: `pkgs/by-name/he/` (including
   the vendored `build.zig.zon.nix` and `hashes.json`) and the `smoke-herdr`
   check.
-

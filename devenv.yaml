@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://devenv.sh/devenv.schema.json
+inputs:
+  # Shared base: pinned nixpkgs, agents, secrets and git hooks. Needs devenv 2.4.1 or newer.
+  base:
+    url: git+ssh://forgejo@git.headfirst.cloud/headfirst-msp/devenv-base
+    flake: false
+
+imports:
+  - base/modules/standard
