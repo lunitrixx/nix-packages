@@ -4,7 +4,7 @@
 
 Understanding which process fetches git repos is critical for debugging auth issues.
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │  nix build .#package                                │
 │                                                     │
@@ -25,6 +25,7 @@ Understanding which process fetches git repos is critical for debugging auth iss
 ```
 
 **Key distinction:**
+
 - `builtins.fetchGit` / flake input resolution = **evaluation-time**, client-side, calling user's credentials
 - `pkgs.fetchgit` (from nixpkgs) = **build-time**, sandboxed, nixbld user, no SSH access
 
@@ -50,7 +51,7 @@ inputs = {
 
 ### Developer Machine
 
-SSH just works — the evaluator runs as your user with access to `~/.ssh/`:
+SSH just works - the evaluator runs as your user with access to `~/.ssh/`:
 
 ```bash
 # Standard SSH key setup
@@ -66,12 +67,14 @@ nix flake show git+ssh://git@gitlab.example.com/group/repo.git
 When using `sudo`, the evaluator runs as **root**. Two options:
 
 **Option A: Use `--use-remote-sudo`** (preferred)
+
 ```bash
 # Evaluates as YOUR user (SSH works), elevates only for activation
 nixos-rebuild switch --use-remote-sudo --flake .#hostname
 ```
 
-**Option B: Preserve SSH agent through sudo**
+#### Option B: Preserve SSH agent through sudo
+
 ```nix
 # configuration.nix
 security.sudo.extraConfig = ''
@@ -79,7 +82,8 @@ security.sudo.extraConfig = ''
 '';
 ```
 
-**Option C: Deploy key in /root/.ssh/**
+#### Option C: Deploy key in /root/.ssh/
+
 ```bash
 sudo cp ~/.ssh/id_ed25519 /root/.ssh/
 sudo chmod 600 /root/.ssh/id_ed25519
@@ -134,7 +138,7 @@ systemd.services.gitlab-ssh-setup = {
 };
 
 # 4. GIT_SSH_COMMAND on the runner service
-# Critical for DynamicUser/namespace isolation — bypasses ~ resolution
+# Critical for DynamicUser/namespace isolation - bypasses ~ resolution
 systemd.services.gitlab-runner.environment = {
   GIT_SSH_COMMAND = "ssh -F /var/lib/gitlab-runner/.ssh/config -o UserKnownHostsFile=/var/lib/gitlab-runner/.ssh/known_hosts";
 };
@@ -145,17 +149,17 @@ systemd.services.gitlab-runner.environment = {
 **Do NOT unset `GIT_SSH_COMMAND`** in CI templates. The evaluator (fetchGit) runs as the CI job user and needs it to find SSH credentials:
 
 ```yaml
-# WRONG — breaks fetchGit SSH auth
+# WRONG - breaks fetchGit SSH auth
 .nix-base:
   before_script:
     - unset GIT_SSH_COMMAND  # DON'T DO THIS
 
-# CORRECT — keep GIT_SSH_COMMAND from service environment
+# CORRECT - keep GIT_SSH_COMMAND from service environment
 .nix-base:
   before_script:
     - export GIT_CONFIG_GLOBAL="$CI_PROJECT_DIR/.gitconfig"
     - truncate -s0 "$GIT_CONFIG_GLOBAL" 2>/dev/null || true
-    # GIT_SSH_COMMAND inherited from service — do not unset
+    # GIT_SSH_COMMAND inherited from service - do not unset
 ```
 
 ## HTTPS + Access Tokens (Alternative to SSH)
@@ -172,13 +176,15 @@ nix.settings.access-tokens = [
 ```
 
 Or for type-prefixed tokens:
-```
+
+```text
 access-tokens = gitlab.example.com=type:PAT:glpat-XXXXXXXXXXXXX
 ```
 
 ### Git URL Rewriting (Hybrid)
 
 Keep `git+ssh://` in flake.nix but use HTTPS on CI:
+
 ```bash
 git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.example.com/".insteadOf "git@gitlab.example.com:"
 ```
@@ -193,15 +199,17 @@ nix build .#package \
 ```
 
 ### When to Use
+
 - **Local development**: Test changes to a dependency without pushing
 - **Broken SSH on CI**: Bypass fetchGit entirely using checked-out submodules
 
 ### When NOT to Use
+
 - **Production CI builds**: `path:` inputs produce different derivation hashes than `git+ssh://` inputs (different narHash, timestamps). This breaks binary cache sharing between CI and local machines.
 
 ### The Hash Divergence Problem
 
-```
+```text
 flake.lock input:
   git+ssh://gitlab.example.com/repo?rev=abc123
   narHash: sha256-AAAA...
@@ -213,6 +221,7 @@ Same content, DIFFERENT hashes → DIFFERENT derivations → cache miss
 ```
 
 This means:
+
 - Packages built on CI with `--override-input` won't be found by local `nix build`
 - ISO derivation hashes differ between CI and local, breaking deployment automation
 - Binary cache (Attic/Cachix) hits fail
@@ -224,7 +233,7 @@ This means:
 systemd's `DynamicUser=true` creates problems for SSH:
 
 | Issue | Cause | Fix |
-|-------|-------|-----|
+| --- | --- | --- |
 | `~/.ssh/config` not found | `~` resolves to `/` or tmpdir | Use `GIT_SSH_COMMAND` with absolute paths |
 | Permission denied on SSH key | Namespace isolation hides files | Use `StateDirectory` + pre-provisioning service |
 | known_hosts not found | Ephemeral home, no persistent state | Explicit `-o UserKnownHostsFile=` |
@@ -254,28 +263,34 @@ echo $GIT_SSH_COMMAND
 ## Troubleshooting
 
 ### "Permission denied" on SSH config/key
+
 - fetchGit runs as the **calling user**, not root
 - Check `GIT_SSH_COMMAND` is set and points to accessible files
-- If using DynamicUser, `~/.ssh/` won't work — use absolute paths
+- If using DynamicUser, `~/.ssh/` won't work - use absolute paths
 
 ### "Host key verification failed"
+
 - SSH connects but can't verify host key
 - Set `StrictHostKeyChecking accept-new` in SSH config
 - Or use explicit `-o UserKnownHostsFile=` with a pre-populated file
 - Run `ssh-keyscan gitlab.example.com >> /path/to/known_hosts` in setup service
 
 ### Derivation hash mismatch between CI and local
+
 - CI likely using `--override-input path:` which produces different hashes
 - Fix: Make SSH work on CI so flake.lock inputs resolve identically
 - Verify: `nix path-info --derivation .#package` should match on both
 
 ### "error: unable to download 'git+ssh://...': ... (255)"
+
 - Generic git/SSH failure. Add `-vvv` to SSH for details:
+
   ```bash
   GIT_SSH_COMMAND="ssh -vvv" nix build .#package
   ```
 
 ### fetchGit works locally but fails on CI
+
 - Different user context (your user vs gitlab-runner)
 - Check: `whoami` in CI job, verify SSH key accessible to that user
 - Check: `GIT_SSH_COMMAND` env var is set (not unset by before_script)

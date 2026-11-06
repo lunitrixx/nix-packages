@@ -134,9 +134,9 @@ pkgs.mkShell {
 
 ---
 
-# Overlays
+## Overlays
 
-## Basic Structure
+### Basic Structure
 
 ```nix
 # Overlay is: final -> prev -> { modifications }

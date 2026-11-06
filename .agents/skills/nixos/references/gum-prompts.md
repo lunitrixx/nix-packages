@@ -79,7 +79,7 @@ set -euo pipefail
 CONFIG_FILE="/etc/nixos/site-config.yaml"
 
 if [[ -f "$CONFIG_FILE" ]]; then
-  gum style --foreground "#ff0" "Existing config found — loading defaults"
+  gum style --foreground "#ff0" "Existing config found - loading defaults"
 
   existing_hostname=$(yq '.hostname' "$CONFIG_FILE")
   existing_role=$(yq '.role' "$CONFIG_FILE")
@@ -168,7 +168,7 @@ gum confirm "Reboot now?" && reboot
 ## Other Charm Tools
 
 | Tool | Nix Package | Use |
-|------|-------------|-----|
+| --- | --- | --- |
 | `glow` | `pkgs.glow` | Render markdown in terminal (show install docs) |
 | `vhs` | `pkgs.vhs` | Record terminal GIFs (document installer flow) |
 | `freeze` | `pkgs.charm-freeze` | Screenshot terminal output |

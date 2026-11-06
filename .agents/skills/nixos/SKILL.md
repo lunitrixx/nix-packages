@@ -11,14 +11,15 @@ Build and maintain NixOS configurations using Nix flakes. Focus on multi-repo co
 
 ## MCP Tools
 
-This project ships a `nixos` MCP server (`.mcp.json`) that provides two tools — **always prefer these over `nix search`, scraping search.nixos.org, or `gh api` against NixOS/nixpkgs**:
+This project registers a `nixos` MCP server in `devenv.nix` (written to the generated `.mcp.json`) that provides two tools - **always prefer these over `nix search`, scraping search.nixos.org, or `gh api` against NixOS/nixpkgs**:
 
 | Tool | Use |
-|------|-----|
+| --- | --- |
 | `nixos_nix` | Search nixpkgs packages, NixOS/Home-Manager/Darwin options, browse option trees, read `/nix/store` paths, query NixOS Wiki / nix.dev, check binary cache, inspect flake inputs |
-| `nixos_nix_versions` | Get package version history from NixHub.io — find which commit shipped which version |
+| `nixos_nix_versions` | Get package version history from NixHub.io - find which commit shipped which version |
 
 **When to use each tool:**
+
 - "Is package X in nixpkgs / channel Y?" → `nixos_nix` with `action: "info"`
 - "Search for package X" → `nixos_nix` with `action: "search"`
 - "Search NixOS options for X" → `nixos_nix` with `action: "search"`, `type: "options"`
@@ -29,7 +30,7 @@ This project ships a `nixos` MCP server (`.mcp.json`) that provides two tools �
 ## Quick Reference
 
 | Task | Command |
-|------|---------|
+| --- | --- |
 | Build package | `nix build .#packageName` |
 | Enter devShell | `nix develop` |
 | Update flake inputs | `nix flake update` |
@@ -141,13 +142,13 @@ See `references/gum-prompts.md` for Charmbracelet gum prompt patterns, YAML conf
 
 ## Private Git Repos (git+ssh://)
 
-Flake input fetching (`builtins.fetchGit`) runs in the **client/evaluator process** as the **calling user** — NOT the nix daemon. The daemon only handles sandboxed builds.
+Flake input fetching (`builtins.fetchGit`) runs in the **client/evaluator process** as the **calling user** - NOT the nix daemon. The daemon only handles sandboxed builds.
 
 - **Developer**: SSH just works via `~/.ssh/`
 - **sudo nixos-rebuild**: Use `--use-remote-sudo` or deploy key in `/root/.ssh/`
 - **CI runner**: Set `GIT_SSH_COMMAND` with absolute paths to SSH config/key (bypasses DynamicUser `~` resolution)
-- **Never unset `GIT_SSH_COMMAND`** in CI `before_script` — fetchGit needs it
-- **Avoid `--override-input`** on CI for production builds — `path:` inputs produce different derivation hashes than `git+ssh://`, breaking binary cache sharing
+- **Never unset `GIT_SSH_COMMAND`** in CI `before_script` - fetchGit needs it
+- **Avoid `--override-input`** on CI for production builds - `path:` inputs produce different derivation hashes than `git+ssh://`, breaking binary cache sharing
 
 See `references/private-repos.md` for full setup guide, CI runner NixOS config, and troubleshooting.
 
@@ -156,7 +157,7 @@ See `references/private-repos.md` for full setup guide, CI runner NixOS config, 
 For comprehensive documentation on specific topics:
 
 | Topic | Reference File |
-|-------|----------------|
+| --- | --- |
 | Nix language syntax | `references/nix-language.md` |
 | Flake inputs/outputs | `references/flakes.md` |
 | NixOS modules & options | `references/nixos-modules.md` |
@@ -172,6 +173,7 @@ For comprehensive documentation on specific topics:
 ## Common Patterns
 
 ### Pin nixpkgs across repos
+
 Use `inputs.X.inputs.nixpkgs.follows = "nixpkgs"` so every flake shares one
 nixpkgs. For reproducibility, pin the ROOT `nixpkgs.url` to an immutable **commit
 sha**, not a bare branch like `nixos-unstable` (a branch rolls the kernel on every
@@ -179,17 +181,21 @@ sha**, not a bare branch like `nixos-unstable` (a branch rolls the kernel on eve
 `grep`. See `references/channel-pinning.md` (+ `references/nixos-2605.md`).
 
 ### Conditional module loading
+
 ```nix
 imports = lib.optionals config.feature.enable [ ./optional-module.nix ];
 ```
 
 ### Lazy evaluation with mkIf
+
 Always use `lib.mkIf` for conditional config to avoid infinite recursion:
+
 ```nix
 config = lib.mkIf config.myService.enable { /* ... */ };
 ```
 
 ### Override priorities
+
 - `lib.mkDefault` (priority 1000) - easily overridable defaults
 - `lib.mkForce` (priority 50) - force value regardless of other definitions
 - `lib.mkOverride N` - custom priority (lower = higher priority)
@@ -197,13 +203,17 @@ config = lib.mkIf config.myService.enable { /* ... */ };
 ## Troubleshooting
 
 ### "error: getting status of '/nix/store/...': No such file or directory"
+
 Missing store path. Run `nix build` or ensure binary cache is configured.
 
 ### "error: infinite recursion encountered"
+
 Using config values in imports or not wrapping conditional config in `lib.mkIf`.
 
 ### "error: attribute 'X' missing"
+
 Check flake inputs match expected names. Verify `follows` directives.
 
 ### Flake not seeing local changes
+
 Run `git add .` - flakes ignore untracked files.

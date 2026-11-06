@@ -286,10 +286,13 @@ sudo nixos-rebuild switch
 ## Troubleshooting
 
 ### File collision
+
 Home-manager won't overwrite existing files. Back up and remove conflicting files.
 
 ### Changes not applying
+
 Ensure shell is restarted or run `source ~/.nix-profile/etc/profile.d/hm-session-vars.sh`.
 
 ### Module not found
+
 Check home-manager version matches nixpkgs branch (release-25.11 with nixos-25.11).

@@ -43,7 +43,7 @@ Special case: **zabbix74** - the version lives in `versions.nix`, not `package.n
 For each **root** package, pick based on the source fields found:
 
 | If source has... | Check method |
-|------------------|--------------|
+| --- | --- |
 | `owner` + `repo` (fetchFromGitHub) | `gh api repos/<owner>/<repo>/releases/latest --jq '.tag_name \| ltrimstr("v")'` |
 | `url` containing `AppImage` | Read `version` from the electron-updater feed next to the AppImage - see *AppImage: the `latest-linux.yml` feed* below. `web_search` only as fallback. |
 | `url` containing `tar.gz` (e.g. zabbix CDN) | `web_search` or check the source download page |
@@ -67,7 +67,7 @@ confirm the URL pattern still resolves to the published build.
 The three feeds in this package set, verified 2026-09-13 (HTTP 200, no account):
 
 | Package | Feed URL |
-|---|---|
+| --- | --- |
 | `ray` | `https://ray-app.s3.eu-west-1.amazonaws.com/ray-app-updates-v3/stable/latest-linux.yml` |
 | `tinkerwell` | `https://download.tinkerwell.app/tinkerwell/latest-linux.yml` |
 | `fontbase` | `https://releases.fontba.se/linux/latest-linux.yml` |
@@ -143,7 +143,7 @@ If any package fails, diagnose and fix before committing.
 
 Present a summary table of what was bumped:
 
-```
+```text
 | Package          | Old      | New      | Status  |
 |------------------|----------|----------|---------|
 | netbird          | 0.73.2   | 0.74.0   | BUMPED  |

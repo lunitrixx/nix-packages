@@ -85,7 +85,7 @@ install-script = pkgs.writeShellApplication {
 ### Verify closure stability
 
 ```bash
-# Build twice — store path hash must match if no code changed
+# Build twice - store path hash must match if no code changed
 nix build .#nixosConfigurations.iso.config.system.build.isoImage
 nix path-info --derivation .#nixosConfigurations.iso.config.system.build.isoImage
 ```
@@ -102,7 +102,7 @@ isoImage.contents = [
 
 ## Reading YAML in NixOS Modules
 
-Site config is runtime state — read it in activation scripts or systemd, not module evaluation:
+Site config is runtime state - read it in activation scripts or systemd, not module evaluation:
 
 ```nix
 # WRONG - evaluated at build time, breaks closure

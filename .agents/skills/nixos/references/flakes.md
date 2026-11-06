@@ -240,7 +240,7 @@ See `references/private-repos.md` for comprehensive guide. Key points:
 - `git+ssh://` input fetching runs as the **calling user** (not nix daemon)
 - Developer machines: SSH works via `~/.ssh/` automatically
 - CI runners: Need `GIT_SSH_COMMAND` with absolute paths to SSH config
-- `--override-input path:` produces **different derivation hashes** than `git+ssh://` — avoid on CI
+- `--override-input path:` produces **different derivation hashes** than `git+ssh://` - avoid on CI
 
 ```nix
 inputs = {
@@ -256,16 +256,21 @@ inputs = {
 ## Common Issues
 
 ### Input not found
+
 Ensure flake has `git add flake.nix flake.lock` - untracked files ignored.
 
 ### Dirty tree warning
+
 Commit or stage changes, or use `--impure` flag.
 
 ### Infinite recursion
+
 Usually from accessing config values before they're defined. Use `lib.mkIf` for conditional config.
 
 ### Hash mismatch
+
 Update hash with: `nix build 2>&1 | grep 'got:' | awk '{print $2}'`
 
 ### SSH "Permission denied" on CI
+
 fetchGit runs as the CI job user, not root. Ensure `GIT_SSH_COMMAND` is set (not unset in before_script) and points to an SSH config with the deploy key. See `references/private-repos.md`.
